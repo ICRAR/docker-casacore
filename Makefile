@@ -1,6 +1,7 @@
 .ONESHELL:
 MY_GID=$(shell id -g)
 MY_UID=$(shell id -u) 
+MY_NAME=$(shell id -un)
 MY_CMD=ipython
 .PHONY: help
 help:             ## Show the help.
@@ -27,6 +28,7 @@ build-casacore:   ## Build the casacore image
 
 .PHONY: docker-start
 docker-start:     ## run the final image with optional MY_CMD variable
+	@mkdir -p $(HOME)/scratch
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
 	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=$(MY_CMD) docker compose -f docker/docker-compose.yaml run --rm casacore
 
@@ -37,6 +39,7 @@ docker-stop:      ## Install using docker containers
 
 .PHONY: test
 test:             ## Run a simple test
+	@mkdir -p $(HOME)/scratch
 	@echo "Creating a small MS using the Adios2StMan"
 	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=$(MY_CMD) docker compose -f docker/docker-compose.yaml run --rm casacore /code/casacore/build/tables/DataMan/test/tAdios2StMan > /dev/null
 	@echo "Checking with python-casacore"

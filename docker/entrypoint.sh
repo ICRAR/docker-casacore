@@ -1,4 +1,4 @@
 #!/bin/bash
 . /code/venv/bin/activate
-export IPYTHONPARENT=$PWD
+export IPYTHONDIR=/scratch/.ipython
 $1
