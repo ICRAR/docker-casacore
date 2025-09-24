@@ -33,8 +33,14 @@ current user. It will mount the directory ~/scratch into the container in order 
 exchange data with the host file system.
 
 ```bash
-make docker-start
+make docker-start [MY_CMD=<cmd>]
 ```
+This make target allows to override the default launching of ipython inside the docker container
+using the MY_CMD variable. For example
+```bash
+make docker-start MY_CMD=bash
+```
+will start a bash shell in the container.
 
 ```bash
 make docker-stop
