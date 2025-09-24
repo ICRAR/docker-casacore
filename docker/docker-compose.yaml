@@ -1,0 +1,16 @@
+services:
+# =============================================================
+#
+#	 casacore
+#
+# =============================================================
+
+  casacore:
+    image: icrar/casacore:latest
+    user: ${MY_UID}:${MY_GID}
+    container_name: icrar-casacore
+    volumes:
+      - ~/scratch:/scratch
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+

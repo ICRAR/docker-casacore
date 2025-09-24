@@ -1,0 +1,32 @@
+FROM icrar/adios2-mgard:latest
+#
+# Build casacore
+#
+RUN python -m venv venv \
+    && . venv/bin/activate \
+    && pip install numpy \
+    && mkdir -p /code \
+    && cd /code \
+    && git clone https://github.com/casacore/casacore.git
+COPY /patch/tAdios2StMan.cc tables/DataMan/test/
+RUN . /code/venv/bin/activate 
+    && cmake .. \
+    -DBUILD_TESTING=ON \
+    -DUSE_OPENMP=ON \
+    -DUSE_HDF5=ON \
+    -DUSE_ADIOS2=ON \
+    -DUSE_MPI=ON \
+    -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} \
+    -DDATA_DIR=/usr/local/share/casacore/data \
+    -DCMAKE_C_COMPILER=/usr/bin/clang \
+    -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+    && make -j`nproc` install \
+    && ldconfig
+#
+# Build python-casacore from source
+#
+WORKDIR /code
+RUN . venv/bin/activate \
+    && pip install --no-binary python-casacore python-casacore \
+    && pip install ipython \
+    && echo ". venv/bin/activate" >> .bashrc
