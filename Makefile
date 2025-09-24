@@ -29,7 +29,6 @@ build-casacore:   ## Build the casacore image
 docker-start:     ## run the final image with optional MY_CMD variable
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
 	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=$(MY_CMD) docker compose -f docker/docker-compose.yaml run --rm casacore
-# 	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) docker compose -f docker/docker-compose.yaml run --rm casacore /bin/bash 
 
 .PHONY: docker-stop
 docker-stop:      ## Install using docker containers
