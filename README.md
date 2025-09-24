@@ -40,8 +40,12 @@ using the MY_CMD variable. For example
 ```bash
 make docker-start MY_CMD=bash
 ```
-will start a bash shell in the container.
-
+will start a bash shell in the container. In the same way it is also possible to place an *executable* python script into the ~/scratch directory and execute it
+```bash
+make docker-start MY_CMD=/scratch/my_script.py
+```
+There is also a stop target available, which cleans up potentially 
+orphan containers, although this should not happen.
 ```bash
 make docker-stop
 ```
