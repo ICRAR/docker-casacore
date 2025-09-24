@@ -3,27 +3,21 @@ FROM icrar/ubuntu2404_clang:latest
 # Install WSRT Measures (extra casacore data, for tests)
 # Note: The file on the ftp site is updated daily. When warnings regarding leap
 # seconds appear, ignore them or regenerate the docker image.
-RUN wget -nv -O /WSRT_Measures.ztar https://www.astron.nl/iers/WSRT_Measures.ztar \
-    && mkdir -p /usr/local/share/casacore/data \
-    && cd /usr/local/share/casacore/data \
-    && tar xfz /WSRT_Measures.ztar \
-    && rm /WSRT_Measures.ztar \
-    && cd / \
-    && git clone https://github.com/ornladios/ADIOS2.git \
+RUN git clone https://github.com/ornladios/ADIOS2.git \
     && cd ADIOS2 \
     && mkdir adios2-build && cd adios2-build \
     && git clone https://github.com/CODARcode/MGARD.git \
 #
 # build MGARD first and install it to the right place
 #
-    && cd MGARD && ./build_scripts/build_mgard_openmp_cpu.sh \
+    && cd MGARD && ./build_scripts/build_mgard_openmp_cpu.sh `nproc`\
     && cd /ADIOS2/adios2-build/MGARD/install-openmp-cpu/ \
     && cp -r * /usr/. \
 #
 # build ADIOS2 with MGARD enabled
 #
     && cd /ADIOS2/adios2-build \
-    && cmake .. -DMGARD=ON \
+    && cmake .. -DMGARD=ON -j `nproc`\
 #
 # install ADIOS2
 #

@@ -11,7 +11,7 @@ See also
 
 ## Usage
 ### Complete build
-This will take pretty long and MGARD requires > 16GB of memory during compilation. 
+This will take pretty long, but hopefuly the first two images don't have to be done too often. 
 
 ```bash
 make build-all

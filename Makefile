@@ -27,12 +27,21 @@ build-casacore :	  ## Build the casacore image
 .PHONY: docker-start
 docker-start :	  ## run the final image
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
-	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) docker compose -f docker/docker-compose.yaml up
+# 	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) docker compose -f docker/docker-compose.yaml up
+	@MY_GID=0 MY_UID=0 docker compose -f docker/docker-compose.yaml up -d
 
 .PHONY: docker-stop
 docker-stop :	  ## Install using docker containers
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
 	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) docker compose -f docker/docker-compose.yaml down
+
+.PHONY: test
+test: docker-start ## Run a simple test
+	@echo "Creating a small MS using the Adios2StMan"
+	@docker run -v ~/scratch:/scratch --rm icrar/casacore /code/casacore/build/tables/DataMan/test/tAdios2StMan > /dev/null
+	@echo "Checking with python-casacore"
+# 	@docker run -v ~/scratch:/scratch --rm icrar/casacore /code/venv/bin/python /code/test_Adios2StMan.py
+	@docker run -v ~/scratch:/scratch --rm icrar/casacore /code/venv/bin/python /scratch/test_Adios2StMan.py
 
 .PHONY: release
 release :          ## Create a new tag for release.

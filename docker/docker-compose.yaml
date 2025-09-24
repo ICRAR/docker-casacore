@@ -7,7 +7,7 @@ services:
 
   casacore:
     image: icrar/casacore:latest
-    user: ${MY_UID}:${MY_GID}
+    # user: ${MY_UID}:${MY_GID}
     container_name: icrar-casacore
     volumes:
       - ~/scratch:/scratch

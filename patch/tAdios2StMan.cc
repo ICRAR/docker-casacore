@@ -23,6 +23,9 @@
 //#                        520 Edgemont Road
 //#                        Charlottesville, VA 22903-2475 USA
 
+//# This patched version has the uShort types disabled, since that seems
+//# to be unsupported by python-casacore
+
 #include <casacore/tables/DataMan/Adios2StMan.h>
 #include <casacore/tables/Tables/ArrayColumn.h>
 #include <casacore/tables/Tables/ArrColDesc.h>

@@ -2,14 +2,22 @@ FROM icrar/adios2-mgard:latest
 #
 # Build casacore
 #
-RUN python -m venv venv \
+RUN wget -nv -O /WSRT_Measures.ztar https://www.astron.nl/iers/WSRT_Measures.ztar \
+    && mkdir -p /usr/local/share/casacore/data \
+    && cd /usr/local/share/casacore/data \
+    && tar xfz /WSRT_Measures.ztar \
+    && rm /WSRT_Measures.ztar \
+    && cd /
+RUN mkdir -p /code \
+    && cd /code \
+    && python -m venv venv \
     && . venv/bin/activate \
     && pip install numpy \
-    && mkdir -p /code \
-    && cd /code \
     && git clone https://github.com/casacore/casacore.git
-COPY /patch/tAdios2StMan.cc tables/DataMan/test/
-RUN . /code/venv/bin/activate 
+COPY /patch/tAdios2StMan.cc /code/casacore/tables/DataMan/test/
+RUN . /code/venv/bin/activate \
+    && mkdir -p /code/casacore/build \
+    && cd /code/casacore/build \
     && cmake .. \
     -DBUILD_TESTING=ON \
     -DUSE_OPENMP=ON \
@@ -30,3 +38,5 @@ RUN . venv/bin/activate \
     && pip install --no-binary python-casacore python-casacore \
     && pip install ipython \
     && echo ". venv/bin/activate" >> .bashrc
+COPY ./test/test_Adios2StMan.py .
+WORKDIR /scratch
