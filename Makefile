@@ -1,50 +1,50 @@
 .ONESHELL:
 MY_GID=$(shell id -g)
 MY_UID=$(shell id -u) 
+MY_CMD=ipython
 .PHONY: help
 help:             ## Show the help.
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Targets:"
-	@fgrep "##" Makefile | fgrep -v fgrep
+	@fgrep "##" Makefile | fgrep -v fgrep | sed "s/##//g"
 
 .PHONY : build-all build-ubuntu-base build-adios2-mgard build-casacore
 
 build-all : build-ubuntu-base build-adios-mgard build-casacore
 
-build-ubuntu-base :	  ## Build the ubuntu base image
+build-ubuntu-base:## Build the ubuntu base image
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
 	@docker build -f docker/build_ubuntu2404_prep.docker --tag icrar/ubuntu2404_clang .
 
-build-adios-mgard :	  ## Build the adios2-mgard image
+build-adios-mgard:## Build the adios2-mgard image
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
 	@docker build -f docker/build_adios2-mgard.docker --tag icrar/adios2-mgard .
 
-build-casacore :	  ## Build the casacore image
+build-casacore:   ## Build the casacore image
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
 	@docker build -f docker/build_casacore.docker --tag icrar/casacore .
 
 .PHONY: docker-start
-docker-start :	  ## run the final image
+docker-start:     ## run the final image with optional MY_CMD variable
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
-# 	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) docker compose -f docker/docker-compose.yaml up
-	@MY_GID=0 MY_UID=0 docker compose -f docker/docker-compose.yaml up -d
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=$(MY_CMD) docker compose -f docker/docker-compose.yaml run --rm casacore
+# 	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) docker compose -f docker/docker-compose.yaml run --rm casacore /bin/bash 
 
 .PHONY: docker-stop
-docker-stop :	  ## Install using docker containers
+docker-stop:      ## Install using docker containers
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
-	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) docker compose -f docker/docker-compose.yaml down
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=$(MY_CMD) docker compose -f docker/docker-compose.yaml run --rm --remove-orphans casacore echo
 
 .PHONY: test
-test: docker-start ## Run a simple test
+test:             ## Run a simple test
 	@echo "Creating a small MS using the Adios2StMan"
-	@docker run -v ~/scratch:/scratch --rm icrar/casacore /code/casacore/build/tables/DataMan/test/tAdios2StMan > /dev/null
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=$(MY_CMD) docker compose -f docker/docker-compose.yaml run --rm casacore /code/casacore/build/tables/DataMan/test/tAdios2StMan > /dev/null
 	@echo "Checking with python-casacore"
-# 	@docker run -v ~/scratch:/scratch --rm icrar/casacore /code/venv/bin/python /code/test_Adios2StMan.py
-	@docker run -v ~/scratch:/scratch --rm icrar/casacore /code/venv/bin/python /scratch/test_Adios2StMan.py
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=/code/test_Adios2StMan.py docker compose -f docker/docker-compose.yaml run --rm casacore
 
 .PHONY: release
-release :          ## Create a new tag for release.
+release:          ## Create a new tag for release.
 	@echo "WARNING: This operation will create s version tag and push to github"
 	@read -p "Version? (provide the next x.y.z semver) : " TAG
 	@if ! grep -q "v$${TAG}" CHANGELOG.md; then echo "TAG version number must be added to CHANGELOG.md before committing." && exit; fi

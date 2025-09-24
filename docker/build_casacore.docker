@@ -40,3 +40,5 @@ RUN . venv/bin/activate \
     && echo ". venv/bin/activate" >> .bashrc
 COPY ./test/test_Adios2StMan.py .
 WORKDIR /scratch
+COPY ./docker/entrypoint.sh /
+ENTRYPOINT ["/bin/bash","/entrypoint.sh"]

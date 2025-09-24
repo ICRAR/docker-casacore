@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 from casacore.tables import table
+from glob import glob
 from numpy import array, complex64
 import shutil
 
@@ -16,5 +18,6 @@ t.close()
 
 assert(d.all() == data.all())
 print("Cleaning up...")
+ms = glob("*.table")
 shutil.rmtree("/scratch/default.table")
 shutil.rmtree("/scratch/duplicated.table")
