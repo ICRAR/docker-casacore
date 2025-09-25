@@ -3,15 +3,17 @@ MY_GID=$(shell id -g)
 MY_UID=$(shell id -u) 
 MY_NAME=$(shell id -un)
 MY_CMD=ipython
+
 .PHONY: help
 help:             ## Show the help.
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Targets:"
+	@echo ""
 	@fgrep "##" Makefile | fgrep -v fgrep | sed "s/##//g"
 
 .PHONY : build-all build-ubuntu-base build-adios2-mgard build-casacore
-## build-all: Build the complete stack of images. This takes very long.
+##build-all:         Build the complete stack of images. This takes very long.
 build-all : build-ubuntu-base build-adios-mgard build-casacore
 
 build-ubuntu-base:## Build the ubuntu base image
