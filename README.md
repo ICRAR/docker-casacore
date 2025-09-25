@@ -2,7 +2,8 @@
 # DOCKER-CASACORE
 
 This small project packs the various docker builds required to get a working casacore
-installation with the Adios2StMan and MGARD compression enabled.
+installation with the Adios2StMan and MGARD compression enabled. Dysco is also enabled
+and thus this image is well suited to investigate the compression of visibilities.
 
 See also 
 - [casacore](https://github.com/casacore/casacore) The casacore GIT repo.
