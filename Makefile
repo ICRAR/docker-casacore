@@ -43,9 +43,9 @@ stop:             ## Install using docker containers
 test:             ## Run a simple test
 	@mkdir -p $(HOME)/scratch
 	@echo "Creating a small MS using the Adios2StMan"
-	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) CMD=$(CMD) docker compose -f docker/docker-compose.yaml run --rm casacore /code/casacore/build/tables/DataMan/test/tAdios2StMan > /dev/null
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_VOLUME=$(MY_VOLUME) CMD=$(CMD) docker compose -f docker/docker-compose.yaml run --rm casacore /code/casacore/build/tables/DataMan/test/tAdios2StMan > /dev/null
 	@echo "Checking with python-casacore"
-	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) CMD=/code/test_Adios2StMan.py docker compose -f docker/docker-compose.yaml run --rm casacore
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_VOLUME=$(MY_VOLUME) CMD=/code/test_Adios2StMan.py docker compose -f docker/docker-compose.yaml run --rm casacore
 
 .PHONY: release
 release:          ## Create a new tag for release.
