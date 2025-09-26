@@ -1,8 +1,8 @@
 .ONESHELL:
 MY_GID=$(shell id -g)
 MY_UID=$(shell id -u) 
-MY_NAME=$(shell id -un)
-MY_CMD=ipython
+MY_VOLUME=$(HOME)/scratch
+CMD=ipython
 
 .PHONY: help
 help:             ## Show the help.
@@ -28,24 +28,24 @@ build-casacore:   ## Build the casacore image
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
 	@docker build -f docker/build_casacore.docker --tag icrar/casacore .
 
-.PHONY: docker-start
-docker-start:     ## run the final image with optional MY_CMD variable
+.PHONY: start
+start:            ## run the final image with optional CMD variable
 	@mkdir -p $(HOME)/scratch
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
-	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=$(MY_CMD) docker compose -f docker/docker-compose.yaml run --rm casacore
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) CMD=$(CMD) MY_VOLUME=$(MY_VOLUME) docker compose -f docker/docker-compose.yaml run --rm casacore
 
-.PHONY: docker-stop
-docker-stop:      ## Install using docker containers
+.PHONY: stop
+stop:             ## Install using docker containers
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
-	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=$(MY_CMD) docker compose -f docker/docker-compose.yaml run --rm --remove-orphans casacore echo
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) CMD=$(CMD) MY_VOLUME=$(MY_VOLUME) docker compose -f docker/docker-compose.yaml run --rm --remove-orphans casacore echo
 
 .PHONY: test
 test:             ## Run a simple test
 	@mkdir -p $(HOME)/scratch
 	@echo "Creating a small MS using the Adios2StMan"
-	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=$(MY_CMD) docker compose -f docker/docker-compose.yaml run --rm casacore /code/casacore/build/tables/DataMan/test/tAdios2StMan > /dev/null
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) CMD=$(CMD) docker compose -f docker/docker-compose.yaml run --rm casacore /code/casacore/build/tables/DataMan/test/tAdios2StMan > /dev/null
 	@echo "Checking with python-casacore"
-	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) MY_CMD=/code/test_Adios2StMan.py docker compose -f docker/docker-compose.yaml run --rm casacore
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) CMD=/code/test_Adios2StMan.py docker compose -f docker/docker-compose.yaml run --rm casacore
 
 .PHONY: release
 release:          ## Create a new tag for release.

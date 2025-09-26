@@ -11,6 +11,24 @@ See also
 - [MGARD](https://github.com/CODARcode/MGARD) The MGARD compression suite.
 
 ## Usage
+The package comes with a Makefile allowing an easy and straight forward way to build and run
+the image.
+
+```bash
+Usage: make <target>
+
+Targets:
+
+help:              Show the help.
+build-all:         Build the complete stack of images. This takes very long.
+build-ubuntu-base: Build the ubuntu base image
+build-adios-mgard: Build the adios2-mgard image
+build-casacore:    Build the casacore image
+start:             run the final image with optional CMD variable
+stop:              Install using docker containers
+test:              Run a simple test
+release:           Create a new tag for release.
+```
 ### Complete build
 This will take pretty long, but hopefuly the first two images don't have to be done too often. 
 
@@ -34,20 +52,30 @@ current user. It will mount the directory ~/scratch into the container in order 
 exchange data with the host file system.
 
 ```bash
-make docker-start [MY_CMD=<cmd>]
+make start [CMD=<cmd>] [MY_VOLUME=<path>]
 ```
 This make target allows to override the default launching of ipython inside the docker container
-using the MY_CMD variable. For example
+using the `CMD` variable. For example
 ```bash
-make docker-start MY_CMD=bash
+make start CMD=bash
 ```
 will start a bash shell in the container. In the same way it is also possible to place an *executable* python script into the ~/scratch directory and execute it
 ```bash
-make docker-start MY_CMD=/scratch/my_script.py
+make start CMD=/scratch/my_script.py
 ```
-There is also a stop target available, which cleans up potentially 
-orphan containers, although this should not happen.
+Using the `MY_VOLUME` variable it is possible to mount any host directory as /scratch inside the container to allow the exchange of data between the host and the container. For example
 ```bash
-make docker-stop
+make start MY_VOLUME=~/data
+```
+would mount the data directory under your home directory as /scratch inside the container.
+
+There is also a stop target available, which cleans up potentially 
+orphan containers, although this should not happen in normal circumstances.
+```bash
+make stop
 ```
 
+There is also a test target, which produces two MeasurmentSets using the Adios2 storage manager from the casacore C++ level and reads the data back using python-casacore. This makes sure that most of the stack is working correctly.
+```bash
+make test
+```
