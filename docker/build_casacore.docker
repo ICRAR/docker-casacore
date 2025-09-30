@@ -37,8 +37,9 @@ WORKDIR /code
 RUN . venv/bin/activate \
     && pip install --no-binary python-casacore python-casacore \
     && pip install ipython \
-    && echo ". venv/bin/activate" >> .bashrc
-COPY ./test/test_Adios2StMan.py .
+    && echo ". venv/bin/activate" >> .bashrc \
+    && scp -r /ADIOS2/adios2-build/local/lib/python3.12/dist-packages/adios2 /code/venv/lib/python3.12/site-packages/.
+COPY ./test/* .
 WORKDIR /scratch
 COPY ./docker/entrypoint.sh /
 ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
