@@ -6,7 +6,6 @@ import logging,adios2
 t=table('Reduced_1197634368.ms',readonly=False)
 print('Read DATA')
 d=t.getcol('DATA')
-t.close()
 #
 s=d.shape
 macdr=makearrcoldesc('REAL',1.,2,[s[1], s[2]],'Adios2StMan') # Adios is float but not complex
@@ -29,4 +28,17 @@ fr.write('IMAG',d.imag.astype(np.float32),shape=d.shape,start=(0,0,0),
          count=(s[0],s[1],s[2]),operations=[('mgard',{'accuracy':'10.0','mode':'ABS','s':'0','lossless':"Huffman_Zstd"})])
 print('Close')
 fr.close()
+print('Read back and write')
+fr=adios2.Stream('1197634368_xml.tab','r')
+macd=makearrcoldesc('COPY',1+1j,2,[s[1],s[2]],'TiledShapeStMan')
+t.addcols(maketabdesc((macd))
+fr=adios2.Stream('1197634368_xml.tab','r')
+for _ in fr.steps():
+    var=fr.available_variables()
+    data=fr.read('REAL').astype(np.complex64)
+    data.imag=fr.read('IMAG')
+    t.putcol('COPY',data) # If we have steps these will need adding here
+print('Close')
+fr.close()
 t2.close()
+t.close()
