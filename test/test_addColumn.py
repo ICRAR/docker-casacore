@@ -1,28 +1,36 @@
 from casacore.tables import (makescacoldesc, makearrcoldesc, table,
-                          maketabdesc, tableexists, tableiswritable,
-                          tableinfo, tablefromascii, tabledelete,
-                          makecoldesc, msconcat, removeDerivedMSCal,
-                          taql, tablerename, tablecopy, tablecolumn,
-                          addDerivedMSCal, removeImagingColumns,
-                          addImagingColumns, complete_ms_desc,
-                          required_ms_desc, tabledefinehypercolumn,
-                          default_ms, default_ms_subtable, makedminfo)
+                          maketabdesc)
 import numpy as np
-import collections
 
+# produce some data
+vis = np.random.rand(10000, 120, 4)
+
+# create a scalar column in a new table
 c1 = makescacoldesc("coli", 0)
-c2 = makescacoldesc("cold", 0.)
-c3 = makescacoldesc("cols", "")
-c4 = makescacoldesc("colb", True)
-c5 = makescacoldesc("colc", 0. + 0j)
-c6 = makearrcoldesc("colarr", 0.)
-t = table("ttable.py_tmp.tab1", maketabdesc((c1, c2, c3, c4, c5, c6)), ack=False)
+t = table("ttable_adios_test", maketabdesc((c1)), ack=False)
 
-t.addcols(maketabdesc(makescacoldesc("coli2", 0)),
-          dminfo={'TYPE': "Adios2StMan", 'NAME': "asm1",
-          'SPEC': {'XMLFILE':"adios.xml"}})
-t.addrows(3)
-t.putcol('coli2',value=np.array([20,21,22]))
+# add an ADIOS2 column to that table using specs from a XML file
+t.addcols(makearrcoldesc("vis1", 0., shape=vis.shape[1:]),
+          dminfo={"TYPE": "Adios2StMan", "NAME":"asm1", "SPEC": {"XMLFILE":"adios.xml"}})
+        #   dminfo={"TYPE": "Adios2StMan", "NAME":"asm1"})
+t.addcols(makearrcoldesc("vis2", 0., shape=vis.shape[1:]),
+          dminfo={"TYPE": "IncrementalStMan", "NAME": "ism1"})
+
+# add as many rows as there are rows in the data
+t.addrows(vis.shape[0])
+
+# write the column data and close the table
+t.putcol('vis1',value=vis)
+t.putcol('vis2',value=vis)
 t.close()
-t = table("ttable.py_tmp.tab1")
-print(t.getcol('coli2'))
+
+# open again and make a copy of the data
+t = table("ttable_adios_test",readonly=False)
+vis = t.getcol("vis1")
+coldmi = t.getdminfo("vis1")
+coldmi["NAME"] = "vis3"
+t.addcols(maketabdesc(makearrcoldesc("vis3",0.)), coldmi)
+t.putcol("vis2", value=vis)
+t.putcol("vis3", value=vis)
+t.close()
+

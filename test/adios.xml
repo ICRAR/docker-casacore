@@ -21,13 +21,11 @@
             <parameter key="OpenTimeoutSecs" value="100.0"/>
             <parameter key="SubStreams" value="128"/>
 
-            <!--
-            <variable name=“temperature">
-               <operation type=“sz">
-                   <parameter key=“accuracy" value=“0.0001"/>
+            <variable name="vis">
+               <operation type="mgard">
+                   <parameter key="accuracy" value="0.1"/>
                </operation>
             </variable>
-            -->
         </engine>
     </io>
 
