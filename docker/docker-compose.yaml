@@ -9,9 +9,12 @@ services:
     image: icrar/casacore:latest
     user: ${MY_UID}:${MY_GID}
     container_name: icrar-casacore
+    environment:
+      - DISPLAY=${DISPLAY}
     command: ${CMD}
     volumes:
       - ${MY_VOLUME}:/scratch
       - /etc/passwd:/etc/passwd:ro
       - /etc/group:/etc/group:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw"
 

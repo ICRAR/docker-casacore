@@ -27,6 +27,8 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     python3-mpi4py \
     python3.12-venv \
     python3-pip \
+    tk-dev \
+    python3-tk \
     pkg-config \
     vim \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

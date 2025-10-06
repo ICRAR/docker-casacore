@@ -13,13 +13,15 @@ RUN mkdir -p /code \
     && python -m venv venv \
     && . venv/bin/activate \
     && pip install numpy \
-    && git clone https://github.com/casacore/casacore.git
-COPY /patch/tAdios2StMan.cc /code/casacore/tables/DataMan/test/
+    && git clone https://github.com/rtobar/casacore.git \
+    && cd casacore && git checkout adios2stman-name && cd .. \
+    # && git clone https://github.com/casacore/casacore.git
+# COPY /patch/tAdios2StMan.cc /code/casacore/tables/DataMan/test/
 RUN . /code/venv/bin/activate \
     && mkdir -p /code/casacore/build \
     && cd /code/casacore/build \
     && cmake .. \
-    -DBUILD_TESTING=ON \
+    -DBUILD_TESTING=OFF \
     -DUSE_OPENMP=ON \
     -DUSE_HDF5=ON \
     -DUSE_ADIOS2=ON \
@@ -36,8 +38,7 @@ RUN . /code/venv/bin/activate \
 WORKDIR /code
 RUN . venv/bin/activate \
     && pip install --no-binary python-casacore python-casacore \
-    && pip install ipython \
-    && echo ". venv/bin/activate" >> .bashrc \
+    && pip install ipython matplotlib \
     && scp -r /usr/local/local/lib/python3.12/dist-packages /code/venv/lib/python3.12/
 COPY ./test/* .
 WORKDIR /scratch
