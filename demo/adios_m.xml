@@ -28,22 +28,22 @@
             <--
             <variable name=“COPY">
                <operation type=“mgard">
-                   <parameter key=“accuracy" value=“0.01"/>
-                   <parameter key=“mode" value=“REL"/>
+                   <parameter key=“accuracy" value=“10.0"/>
+                   <parameter key=“mode" value=“ABS"/>
                    <parameter key=“lossless" value="Huffman_Zstd"/>
                </operation>
             </variable>
             <variable name=“REAL">
                <operation type=“mgard">
-                   <parameter key=“accuracy" value=“0.01"/>
-                   <parameter key=“mode" value=“REL"/>
+                   <parameter key=“accuracy" value=“10.0"/>
+                   <parameter key=“mode" value=“ABS"/>
                    <parameter key=“lossless" value="Huffman_Zstd"/>
                </operation>
             </variable>
             <variable name=“IMAG">
                <operation type=“mgard">
-                   <parameter key=“accuracy" value=“0.01"/>
-                   <parameter key=“mode" value=“REL"/>
+                   <parameter key=“accuracy" value=“10.0"/>
+                   <parameter key=“mode" value=“ABS"/>
                    <parameter key=“lossless" value="Huffman_Zstd"/>
                </operation>
             </variable>

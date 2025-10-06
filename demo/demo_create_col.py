@@ -10,16 +10,23 @@ d=t.getcol('DATA')
 s=d.shape
 macdr=makearrcoldesc('REAL',1.,2,[s[1], s[2]],'Adios2StMan') # Adios is float but not complex
 macdi=makearrcoldesc('IMAG',1.,2,[s[1], s[2]],'Adios2StMan')
+macd=makearrcoldesc('COPY',1+1j,2,[s[1],s[2]],'Adios2StMan')
 #
 t2=table('1197634368_xml.tab',maketabdesc((macdr,macdi)),dminfo={'SPEC': {'XMLFILE':"adios_config.yaml"}})
 t2.addrows(s[0])
 #t.addcols(maketabdesc((macdr,macdi))),dminfo={'SPEC': {'XMLFILE':"adios_config.yaml"}})
 print('Fill COPY with DATA')
-#t2.putcol('REAL',d.real)
-#t2.putcol('IMAG',d.imag)
+t2.putcol('REAL',d.real)
+t2.putcol('IMAG',d.imag)
+try:
+    t2.getdminfo('REAL')
+except:
+    print('Failed to read DMINFO for REAL')
+t2.close()
+
 # adios path
 #fr=adios2.Stream('Reduced_1197634368.ms','w')
-fr=adios2.Stream('1197634368_xml.tab','w')
+fr=adios2.Stream('1197634368_xml.direct.tab','w')
 print('Fill REAL with Adios2.Stream')
 fr.write('REAL',d.real.astype(np.float32),shape=d.shape,start=(0,0,0),
          count=(s[0],s[1],s[2]),operations=[('mgard',{'accuracy':'1.0','mode':'ABS','s':'0','lossless':"Huffman_Zstd"})])
@@ -29,11 +36,10 @@ fr.write('IMAG',d.imag.astype(np.float32),shape=d.shape,start=(0,0,0),
 print('Close')
 fr.close()
 print('Read back and write')
-fr=adios2.Stream('1197634368_xml.tab','r')
 if 'COPY' in t.colnames():
   print('Remove old COPY')
   t.removecols('COPY')
-macd=makearrcoldesc('COPY',1+1j,2,[s[1],s[2]],'TiledShapeStMan')
+macd=makearrcoldesc('COPY',1+1j,2,[s[1],s[2]],'Adios2StMan')
 sq=[]
 for n in t.colnames(): sq.append(t.getdminfo(n)['SEQNR'])
 sq=np.max(np.array(sq))
@@ -42,26 +48,23 @@ sq=np.max(np.array(sq))
 #dminfo={"TYPE": "Adios2StMan", "NAME":"asm1", "SEQNR":sq+1, "SPEC": {"XMLFILE":"adios_config.yaml"}})
 #t.putcol('REAL',d.real)
 print('Add the data to the exisiting MS')
-t.addcols(maketabdesc((macdr,macdi)),
+t.addcols(maketabdesc((macdr,macdi,macd)),
   dminfo={"TYPE": "Adios2StMan", "NAME":"asm1", "SEQNR":sq+1, "SPEC": {"XMLFILE":"adios_config.yaml"}})
-t.putcol('REAL',d.real);t.putcol('IMAG',d.imag)
+t.putcol('REAL',d.real);
+t.putcol('IMAG',d.imag)
+t.putcol('COPY',d)
 
 a_dmi=t.getdminfo('REAL')
-fr=adios2.Stream('1197634368_xml.tab','r')
+fr=adios2.Stream('1197634368_xml.direct.tab','r')
 for _ in fr.steps():
     var=fr.available_variables()
     data=fr.read('REAL').astype(np.complex64)
     data.imag=fr.read('IMAG')
-    t.putcol('COPY',data) # If we have steps these will need adding here
+    #t.putcol('COPY',data) # If we have steps these will need adding here
 print('Close')
 fr.close()
 t.getdminfo('COPY')
 t.close()
-try:
-    t2.getdminfo('REAL')
-except:
-    print('Failed to read DMINFO for REAL')
-t2.close()
 
 print('Query ADIOS table')
 os.system('/usr/local/bin/bpls --list_operators 1197634368_xml.tab')

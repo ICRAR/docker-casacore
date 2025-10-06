@@ -46,9 +46,9 @@ dminfo = makedminfo(
         }
     )
 
-t = table(filename, tabledesc=tabdesc, dminfo=dminfo, ack=False)
+t = table(filename, tabledesc=tabdesc, dminfo=dminfo)#, ack=False)
 
-# add an ADIOS2 column to that table using specs from a XML file
+# Add an ADIOS2 column to that table using specs from a XML file
 #t.addcols(makearrcoldesc("IMAG", 0., shape=vis.shape[1:]),
 #          dminfo={"TYPE": "Adios2StMan", "NAME":"asm1", "SPEC": {"XMLFILE":"/code/adios.yaml"}})
 # t.addcols(makearrcoldesc("IMAG", 0., shape=vis.shape[1:]),

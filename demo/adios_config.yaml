@@ -12,49 +12,35 @@
     - Variable: "COPY"
       Operations:
         - Type: mgard
-          accuracy: 0.01
+          accuracy: 10.0
           lossless: Huffman_Zstd
-          mode: REL
+          mode: ABS
           s: 0
     - Variable: "REAL"
       Operations:
         - Type: mgard
-          accuracy: 0.01
+          accuracy: 10.0
           lossless: Huffman_Zstd
-          mode: REL
+          mode: ABS
           s: 0
     - Variable: "IMAG"
       Operations:
         - Type: mgard
-          accuracy: 0.01
+          accuracy: 10.0
           lossless: Huffman_Zstd
-          mode: REL
+          mode: ABS
           s: 0
     - Variable: "COPY"
       Operations:
         - Type: mgard
-          accuracy: 0.01
+          accuracy: 10.0
           lossless: Huffman_Zstd
-          mode: REL
-          s: 0
-    - Variable: "COPY"
-      Operations:
-        - Type: mgard
-          accuracy: 0.01
-          lossless: Huffman_Zstd
-          mode: REL
+          mode: ABS
           s: 0
     - Variable: "DATA"
       Operations:
         - Type: mgard
-          accuracy: 0.001
+          accuracy: 10.0
           lossless: Huffman_Zstd
-          mode: REL
-          s: 0
-    - Variable: "uvw"
-      Operations:
-        - Type: mgard
-          accuracy: 0.01
-          lossless: Huffman_Zstd
-          mode: REL
+          mode: ABS
           s: 0
