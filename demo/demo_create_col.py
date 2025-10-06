@@ -34,7 +34,19 @@ if 'COPY' in t.colnames():
   print('Remove old COPY')
   t.removecols('COPY')
 macd=makearrcoldesc('COPY',1+1j,2,[s[1],s[2]],'TiledShapeStMan')
-t.addcols(maketabdesc((macd)))#,'TiledShapeStMan') # This reverts to standard - should fix
+sq=[]
+for n in t.colnames(): sq.append(t.getdminfo(n)['SEQNR'])
+sq=np.max(np.array(sq))
+#t.addcols(maketabdesc((macd)))#,'TiledShapeStMan') # This reverts to standard - should fix
+#t.addcols(makearrcoldesc("REAL", 0., shape=d.shape[1:]),
+#dminfo={"TYPE": "Adios2StMan", "NAME":"asm1", "SEQNR":sq+1, "SPEC": {"XMLFILE":"adios_config.yaml"}})
+#t.putcol('REAL',d.real)
+print('Add the data to the exisiting MS')
+t.addcols(maketabdesc((macdr,macdi)),
+  dminfo={"TYPE": "Adios2StMan", "NAME":"asm1", "SEQNR":sq+1, "SPEC": {"XMLFILE":"adios_config.yaml"}})
+t.putcol('REAL',d.real);t.putcol('IMAG',d.imag)
+
+a_dmi=t.getdminfo('REAL')
 fr=adios2.Stream('1197634368_xml.tab','r')
 for _ in fr.steps():
     var=fr.available_variables()
