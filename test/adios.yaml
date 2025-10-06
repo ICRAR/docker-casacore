@@ -1,0 +1,14 @@
+- IO: "Adios2StMan"
+  Engine:
+    Type: "BP5"
+  Variables:
+    - Variable: "IMAG"
+      # Operations:
+        # - Type: mgard
+        #   accuracy: 0.01
+        #   lossless: Huffman_Zstd
+        #   mode: REL
+        #   s: 0
+      Operations:
+        - Type: sz
+          accuracy: 0.1
