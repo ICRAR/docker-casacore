@@ -40,7 +40,7 @@ RUN . venv/bin/activate \
     && pip install --no-binary python-casacore python-casacore \
     && pip install ipython matplotlib \
     && scp -r /usr/local/local/lib/python3.12/dist-packages /code/venv/lib/python3.12/
-COPY ./test/* .
+COPY ./test ./test
 WORKDIR /scratch
 COPY ./docker/entrypoint.sh /
 ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
