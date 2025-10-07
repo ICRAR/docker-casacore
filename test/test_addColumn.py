@@ -1,4 +1,5 @@
 import argparse
+from turtle import shape
 """
 This module provides a test script for evaluating the performance and accuracy of column-wise compression
 using the Adios2StMan storage manager in casacore tables. It generates synthetic complex data, writes it to
@@ -163,10 +164,10 @@ def run():
             dminfo={
                 "TYPE": "TiledShapeStMan", "NAME": "tsm1", "SPEC": 
                 {'MaxCacheSize': 0,
-                 'DEFAULTTILESHAPE': np.array([   4,    1, 1998], dtype=np.int32),
+                 'DEFAULTTILESHAPE': np.array([   4,    1, nrows/10], dtype=np.int32),
                  'MAXIMUMCACHESIZE': 0,
-                 'HYPERCUBES': {'*1': {'CubeShape': np.array([      4,     251, 1928070], dtype=np.int32),
-                                       'TileShape': np.array([   4,    1, 1998], dtype=np.int32),
+                 'HYPERCUBES': {'*1': {'CubeShape': np.array(ORIG_SHAPE, dtype=np.int32),
+                                       'TileShape': np.array([   4,    1, nrows/10], dtype=np.int32),
                                        'CellShape': np.array([  4, 251], dtype=np.int32),
                                        'BucketSize': 63936, 'ID': {}}},
   'SEQNR': 2,
