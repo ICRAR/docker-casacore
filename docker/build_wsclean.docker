@@ -1,0 +1,40 @@
+FROM icrar/casacore:latest
+#
+# Build IDG then EveryBeam then WSClean
+#
+RUN . /code/venv/bin/activate \
+    && git config --global --add safe.directory /scratch/wsclean \
+    && git config --global --add safe.directory /scratch/idg \
+    && git config --global --add safe.directory /scratch/EveryBeam \
+    && pip install "pybind11[global]" \
+    && pip install sphinx sphinx_rtd_theme breathe myst-parser
+#     
+# IDG
+RUN . /code/venv/bin/activate \
+    && mkdir idg/build \
+    && cd idg/build \
+    && cmake -CMAKE_INSTALL_PREFIX=/usr/local/idg/ .. \
+    && make -j 4 \
+    && make install \
+    && cd ../.. 
+# Every Beam
+RUN . /code/venv/bin/activate \
+    && mkdir EveryBeam/build \
+    && cd EveryBeam/build \
+    && cmake -CMAKE_INSTALL_PREFIX=/usr/local/EveryBeam/ -i BUILD_WITH_PYTHON .. \
+    && make -j 4 \
+    && make install \
+    && cd ../.. 
+# The MWA beam erquires .h5 file in the path
+#
+# WSClean
+RUN . /code/venv/bin/activate \
+    && mkdir wsclean/build \
+    && cd wsclean/build \
+    && cmake .. \
+    && make -j 4 \
+    && make install \
+    && cd ../.. 
+WORKDIR /scratch
+COPY ./docker/entrypoint.sh /
+ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
