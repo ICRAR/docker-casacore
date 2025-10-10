@@ -362,6 +362,12 @@ if __name__ == "__main__":
     PLOT = True
   if args.dirname != DIRNAME: 
     DIRNAME = args.dirname
+  if args.complex:
+    COMPLEX = True
+    if args.compressor == 'mgard':
+      COMPRESSOR = 'mgard_complex'
+      run_complex()
+      sys.exit()
   if args.compressor != COMPRESSOR:
      COMPRESSOR = COMPRESSOR1 = COMPRESSOR2 = args.compressor
      if COMPRESSOR == 'mgard_complex' or args.complex:
