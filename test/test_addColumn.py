@@ -49,6 +49,7 @@ ACCURACY1 = "0.1"
 ACCURACY2 = "0.1"
 ORIG_SHAPE = [10000, 120, 4]
 DIRNAME = "ttable_adios_test"
+PLOT = False
 
 def get_size(msdir):
     size = 0
@@ -302,8 +303,8 @@ def run()-> tuple:
   print(f'IMAG compression ratio: {size / i_on_disk_size:.2f}\n')
   print('Total decompression and read time: '
         f'{(decomp_real+decomp_imag):.3f} s ({((decomp_real+decomp_imag)/read_complex):.1f}x)\n\n')
-
-  plot(vis, visr, visi)
+  if PLOT:
+    plot(vis, visr, visi)
   return
 
 def run_complex():
@@ -326,11 +327,12 @@ def run_complex():
         f'{tcomp_data:.3f} ({(tcomp_data/tnocomp_complex):.1f}x)\n')
 
   print(f'ORIG read time: {(tread_complex):.3f} s')
-  print('DATA[{COMPRESSOR}] decompression and read time: '
+  print(f'DATA[{COMPRESSOR}] decompression and read time: '
         f'{(tdecomp_data):.3f} s ({(tdecomp_data/tread_complex):.1f}x)\n')
   print(f'Compression ratio: {size / i_on_disk_size:.2f}\n\n')
 
-  plot(vis, None, None, cvis=cvis)
+  if PLOT:
+    plot(vis, None, None, cvis=cvis)
   return
 
 
@@ -345,11 +347,15 @@ if __name__ == "__main__":
   parser.add_argument("--accuracy2", type=str, default=ACCURACY2, help="Accuracy for IMAG column compressor")
   parser.add_argument("--shape", type=int, nargs=3, default=ORIG_SHAPE, help="Shape of the data array")
   parser.add_argument("--dirname", type=str, default=DIRNAME, help="Output filename")
-  parser.add_argument("--complex", type=bool, default=COMPLEX, help="(False) Write complex values directly")
+  parser.add_argument("--complex", action='store_true', help="(False) Write complex values directly")
+  parser.add_argument("--plot", action='store_true', help="(False) Plot comparison histograms.")
 
   args = parser.parse_args()
   if args.accuracy != ACCURACY:
       ACCURACY = ACCURACY1 = ACCURACY2 = args.accuracy
+  if args.plot:
+    print(args.plot)
+    PLOT = True
   if args.compressor != COMPRESSOR:
      COMPRESSOR = COMPRESSOR1 = COMPRESSOR2 = args.compressor
      if COMPRESSOR == 'mgard_complex' or args.complex:
@@ -362,8 +368,8 @@ if __name__ == "__main__":
   elif args.accuracy1 != ACCURACY1 or args.accuracy2 != ACCURACY2:
     ACCURACY1 = args.accuracy1
     ACCURACY2 = args.accuracy2
-  if hasattr(args, 'shape'):
+  if args.shape != ORIG_SHAPE:
     ORIG_SHAPE = args.shape
-  if hasattr(args, 'DIRNAME'): 
-    DIRNAME = args.filename
+  if args.dirname != DIRNAME: 
+    DIRNAME = args.dirname
   run()
