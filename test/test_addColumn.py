@@ -197,7 +197,7 @@ def read_table():
     decomp_imag = time.time() - tic
     return vis, visr, visi, read_complex, decomp_real, decomp_imag
 
-def write_DATA_mgard_complex(vis:array):
+def write_DATA_complex(vis:array):
   tab = table(DIRNAME, readonly=False, ack=False)
   shape = vis.shape
   nrows = shape[0]
@@ -262,7 +262,7 @@ def plot(vis:array, visr:array, visi:array, cvis:array=None):
              align='mid')
   else:
      plt.hist(np.absolute(vis.reshape(-1))-np.absolute(cvis.reshape(-1)),
-              label=f'complex [mgard_complex:{ACCURACY}]',
+              label=f'complex [{COMPRESSOR}:{ACCURACY}]',
               align='mid')
   plt.yscale("log")
   plt.title(f"original-compressed")
@@ -292,14 +292,16 @@ def run()-> tuple:
   print(f'REAL compression and write time: {comp_real:.3f}')
   i_on_disk_size = get_size(f'{DIRNAME}/table.f2.bp')
   print(f'IMAG compression and write time: {comp_imag:.3f}\n')
-  print(f'Total compression and write time: {(comp_real+comp_imag):.3f}\n\n')
+  print('Total compression and write time: '
+        f'{(comp_real+comp_imag):.3f} ({((comp_real+comp_imag)/nocomp_complex):.1f}x)\n\n')
 
   print(f'ORIG read time: {(read_complex):.3f} s')
   print(f'REAL[{COMPRESSOR1}] decompression and read time: {(decomp_real):.3f} s')
   print(f'REAL compression ratio: {size / r_on_disk_size:.2f}')
   print(f'IMAG[{COMPRESSOR2}] decompression and read time: {(decomp_imag):.3f} s')
   print(f'IMAG compression ratio: {size / i_on_disk_size:.2f}\n')
-  print(f'Total decompression and read time: {(decomp_real+decomp_imag):.3f} s\n\n')
+  print('Total decompression and read time: '
+        f'{(decomp_real+decomp_imag):.3f} s ({((decomp_real+decomp_imag)/read_complex):.1f}x)\n\n')
 
   plot(vis, visr, visi)
   return
@@ -314,16 +316,18 @@ def run_complex():
   print()
 
   vis, tnocomp_complex = write_ORIG()
-  tcomp_data = write_DATA_mgard_complex(vis)
+  tcomp_data = write_DATA_complex(vis)
   vis, cvis, tread_complex, tdecomp_data = read_table()
 
   size = get_size(f'{DIRNAME}/table.f0.bp')
   print(f'ORIG write time: {tnocomp_complex:.3f}')
   i_on_disk_size = get_size(f'{DIRNAME}/table.f1.bp')
-  print(f'DATA compression and write time: {tcomp_data:.3f}\n')
+  print('DATA compression and write time: '
+        f'{tcomp_data:.3f} ({(tcomp_data/tnocomp_complex):.1f}x)\n')
 
   print(f'ORIG read time: {(tread_complex):.3f} s')
-  print(f'DATA[{COMPRESSOR}] decompression and read time: {(tdecomp_data):.3f} s')
+  print('DATA[{COMPRESSOR}] decompression and read time: '
+        f'{(tdecomp_data):.3f} s ({(tdecomp_data/tread_complex):.1f}x)\n')
   print(f'Compression ratio: {size / i_on_disk_size:.2f}\n\n')
 
   plot(vis, None, None, cvis=cvis)
@@ -341,13 +345,14 @@ if __name__ == "__main__":
   parser.add_argument("--accuracy2", type=str, default=ACCURACY2, help="Accuracy for IMAG column compressor")
   parser.add_argument("--shape", type=int, nargs=3, default=ORIG_SHAPE, help="Shape of the data array")
   parser.add_argument("--dirname", type=str, default=DIRNAME, help="Output filename")
+  parser.add_argument("--complex", type=bool, default=COMPLEX, help="(False) Write complex values directly")
 
   args = parser.parse_args()
   if args.accuracy != ACCURACY:
       ACCURACY = ACCURACY1 = ACCURACY2 = args.accuracy
   if args.compressor != COMPRESSOR:
      COMPRESSOR = COMPRESSOR1 = COMPRESSOR2 = args.compressor
-     if COMPRESSOR == 'mgard_complex':
+     if COMPRESSOR == 'mgard_complex' or args.complex:
         COMPLEX = True
         run_complex()
         sys.exit()
