@@ -1,5 +1,6 @@
 import argparse
 import array
+import sys
 from turtle import shape
 """
 This module provides a test script for evaluating the performance and accuracy of column-wise compression
@@ -42,6 +43,7 @@ from contextlib import contextmanager
 COMPRESSOR = "mgard"
 COMPRESSOR1 = "mgard"
 COMPRESSOR2 = "mgard"
+COMPLEX = False
 ACCURACY = "0.1"
 ACCURACY1 = "0.1"
 ACCURACY2 = "0.1"
@@ -76,29 +78,19 @@ def create_ADIOS2_column_desc(col_name:str, valuetype:str, cell_shape:list, comp
               valuetype=valuetype, shape=cell_shape,
               datamanagergroup=dm_group, datamanagertype='Adios2StMan'
           )
+  dminfo = {"TYPE": "Adios2StMan", "NAME": dm_name, "SPEC": {} }
+  if compressor != ''  and accuracy != '':
+     dminfo['SPEC'] = {"OPERATORPARAMS": {col_name: {"Operator": compressor, "Accuracy": accuracy}}}
   if not tabdesc:
       tabdesc = maketabdesc(coldesc)
       dminfo = makedminfo(
           tabdesc, 
-          {dm_name: {"OPERATORPARAMS": {col_name: {"Operator": compressor, "Accuracy": accuracy}}}})
-  elif compressor and accuracy:
-     dminfo = {
-                "TYPE": "Adios2StMan", "NAME": dm_name, "SPEC": 
-                {"OPERATORPARAMS": {col_name: {"Operator": compressor, "Accuracy": accuracy}}}        
-     }
-  else:
-     dminfo = {"TYPE": "Adios2StMan", "NAME": dm_name, "SPEC": {} }
+          {dm_name: dminfo['SPEC']})
 
   return coldesc, dminfo, tabdesc
 
-def write_table() -> tuple[float, float, float]:
-  """Create table and write initial data columns to it.
-
-  Args:
-      size (int): _description_
-
-  Returns:
-      tuple[float, float, float]: _description_
+def write_ORIG():
+  """Write the ORIG column
   """
   size = functools.reduce(operator.mul, ORIG_SHAPE[1:], ORIG_SHAPE[0] * 8)
   nrows = ORIG_SHAPE[0]
@@ -114,34 +106,48 @@ def write_table() -> tuple[float, float, float]:
   # Create the table
   coldesc, dminfo, tabdesc = create_ADIOS2_column_desc(
      'ORIG', 'complex', cell_shape, dm_group='asm1', dm_name='asm1')
-  t = table(DIRNAME, tabledesc=tabdesc, dminfo=dminfo, ack=False)
-  t.addrows(nrows)
-
+  tab = table(DIRNAME, tabledesc=tabdesc, dminfo=dminfo, readonly=False, ack=False)
+  tab.addrows(nrows)
   # write ORIG column
   tic = time.time()
-  t.putcol('ORIG',value=vis)
+  tab.putcol('ORIG',value=vis)
+  tab.close()
   nocomp_complex = time.time() - tic
+  return vis, nocomp_complex
 
+
+
+def write_table() -> tuple[float, float, float]:
+  """Create table and write initial ORIG, REAL and IMAG columns to it.
+
+  Returns:
+      tuple[float, float, float]: _description_
+  """
+  cell_shape = ORIG_SHAPE[1:]
+  # add and write ORIG column
+  vis, nocomp_complex = write_ORIG()
+
+  tab = table(DIRNAME, readonly=False, ack=False)
   # add and write REAL column
   coldesc, dminfo, tabdesc = create_ADIOS2_column_desc(
      'REAL', 'float', cell_shape, dm_group='asm2', dm_name='asm2', 
-     compressor=COMPRESSOR1, accuracy=ACCURACY1, tabdesc=tabdesc)
-  t.addcols(coldesc, dminfo)
+     compressor=COMPRESSOR1, accuracy=ACCURACY1)
+  tab.addcols(coldesc, dminfo)
   tic = time.time()
-  t.putcol('REAL',value=np.real(vis))
+  tab.putcol('REAL',value=np.real(vis))
   comp_real = time.time() - tic
 
   # add and write IMAG column
   coldesc, dminfo, tabdesc = create_ADIOS2_column_desc(
      'IMAG', 'float', cell_shape, dm_group='asm3', dm_name='asm3',
      compressor=COMPRESSOR2, accuracy=ACCURACY2, tabdesc=tabdesc)
-  t.addcols(coldesc, dminfo)
+  tab.addcols(coldesc, dminfo)
   tic = time.time()
-  t.putcol('IMAG',value=np.imag(vis))
+  tab.putcol('IMAG',value=np.imag(vis))
   comp_imag = time.time() - tic
 
-  print(t.showstructure())
-  t.close()
+  print(tab.showstructure())
+  tab.close()
   return nocomp_complex, comp_real, comp_imag
 
 def make_DYSCO_column():
@@ -153,7 +159,6 @@ def make_DYSCO_column():
   coldesc = makearrcoldesc("DYSCO", np.complex64(0+0j), shape=ORIG_SHAPE[1:], options=1,
                            datamanagertype='DyscoStMan')
   coldesc['desc']['valueType']='complex' # bug in Dysco???
-  print(coldesc)
   tab.addcols(coldesc,
             dminfo={
                     "TYPE": "DyscoStMan", "NAME": "dysco", "SPEC": {
@@ -178,14 +183,35 @@ def read_table():
   tic = time.time()
   vis = t.getcol('ORIG')
   read_complex = time.time() - tic
-  tic = time.time()
-  visr = t.getcol('REAL')
-  decomp_real = time.time() - tic
-  tic = time.time()
-  visi = t.getcol('IMAG')
-  decomp_imag = time.time() - tic
+  if COMPLEX:
+    tic = time.time()
+    cvis = t.getcol('DATA')
+    decomp_complex = time.time() - tic
+    return vis, cvis, read_complex, decomp_complex
+  else:
+    tic = time.time()
+    visr = t.getcol('REAL')
+    decomp_real = time.time() - tic
+    tic = time.time()
+    visi = t.getcol('IMAG')
+    decomp_imag = time.time() - tic
+    return vis, visr, visi, read_complex, decomp_real, decomp_imag
 
-  return vis, visr, visi, read_complex, decomp_real, decomp_imag
+def write_DATA_mgard_complex(vis:array):
+  tab = table(DIRNAME, readonly=False, ack=False)
+  shape = vis.shape
+  nrows = shape[0]
+  cell_shape = shape[1:]
+  coldesc, dminfo, tabdesc = create_ADIOS2_column_desc(
+     'DATA', 'complex', cell_shape, dm_group='asm2', dm_name='asm2', 
+     compressor=COMPRESSOR, accuracy=ACCURACY)
+  tab.addcols(coldesc, dminfo)
+  tic = time.time()
+  tab.putcol('DATA', value = vis)
+  tdata_complex = time.time() - tic
+  tab.close()
+  print('wrote compressed complex visibilities to DATA column')
+  return tdata_complex
 
 def write_DATA(visr:array, visi:array):
   """Write a DATA column with complex visibilites
@@ -217,17 +243,27 @@ def write_DATA(visr:array, visi:array):
   tab.putcol('DATA', value = cvis)
   print('wrote decompressed complex visibilities to DATA column')
 
-def plot(vis:array, visr:array, visi:array):
+def plot(vis:array, visr:array, visi:array, cvis:array=None):
   """Plot histograms of differences.
 
   Args:
-      vis (array): Original visibilities
-      visr (array): REAL part of visibilities
-      visi (array): IMAG part of visibilities
+      vis (array): Original visibilities.
+      visr (array): REAL part of visibilities.
+      visi (array): IMAG part of visibilities.
+      cvis (array): If provided should contain the result of compressed complex visibilities.
   """
   print(f"Plotting (close the plot window to exit script)...")
-  plt.hist(np.real(vis).reshape(-1)-visr.reshape(-1), label=f'real [{COMPRESSOR1}:{ACCURACY1}]')
-  plt.hist(np.imag(vis).reshape(-1)-visi.reshape(-1), label=f'imag [{COMPRESSOR2}:{ACCURACY2}]')
+  if cvis is None:
+    plt.hist(np.real(vis).reshape(-1)-visr.reshape(-1), 
+             label=f'real [{COMPRESSOR1}:{ACCURACY1}]',
+             align='mid')
+    plt.hist(np.imag(vis).reshape(-1)-visi.reshape(-1),
+             label=f'imag [{COMPRESSOR2}:{ACCURACY2}]',
+             align='mid')
+  else:
+     plt.hist(np.absolute(vis.reshape(-1))-np.absolute(cvis.reshape(-1)),
+              label=f'complex [mgard_complex:{ACCURACY}]',
+              align='mid')
   plt.yscale("log")
   plt.title(f"original-compressed")
   plt.xlabel(f"original-compressed")
@@ -265,11 +301,34 @@ def run()-> tuple:
   print(f'IMAG compression ratio: {size / i_on_disk_size:.2f}\n')
   print(f'Total decompression and read time: {(decomp_real+decomp_imag):.3f} s\n\n')
 
-  vis, visr, visi, read_complex, decomp_real, decomp_imag = read_table()
-
-  write_DATA(visr, visi)
   plot(vis, visr, visi)
   return
+
+def run_complex():
+  size = functools.reduce(operator.mul, ORIG_SHAPE[1:], ORIG_SHAPE[0] * 8)
+
+  print("Settings:")
+  print(f"  Compressor DATA column: {COMPRESSOR} (Accuracy: {ACCURACY})")
+  print(f"  Data shape: {ORIG_SHAPE}")
+  print(f"  Output directory: {DIRNAME}")
+  print()
+
+  vis, tnocomp_complex = write_ORIG()
+  tcomp_data = write_DATA_mgard_complex(vis)
+  vis, cvis, tread_complex, tdecomp_data = read_table()
+
+  size = get_size(f'{DIRNAME}/table.f0.bp')
+  print(f'ORIG write time: {tnocomp_complex:.3f}')
+  i_on_disk_size = get_size(f'{DIRNAME}/table.f1.bp')
+  print(f'DATA compression and write time: {tcomp_data:.3f}\n')
+
+  print(f'ORIG read time: {(tread_complex):.3f} s')
+  print(f'DATA[{COMPRESSOR}] decompression and read time: {(tdecomp_data):.3f} s')
+  print(f'Compression ratio: {size / i_on_disk_size:.2f}\n\n')
+
+  plot(vis, None, None, cvis=cvis)
+  return
+
 
 if __name__ == "__main__":  
   parser = argparse.ArgumentParser(description=
@@ -284,14 +343,17 @@ if __name__ == "__main__":
   parser.add_argument("--dirname", type=str, default=DIRNAME, help="Output filename")
 
   args = parser.parse_args()
-  print(args)
+  if args.accuracy != ACCURACY:
+      ACCURACY = ACCURACY1 = ACCURACY2 = args.accuracy
   if args.compressor != COMPRESSOR:
      COMPRESSOR = COMPRESSOR1 = COMPRESSOR2 = args.compressor
+     if COMPRESSOR == 'mgard_complex':
+        COMPLEX = True
+        run_complex()
+        sys.exit()
   elif args.compressor1 != COMPRESSOR1 or args.compressor2 != COMPRESSOR2:
     COMPRESSOR1 = args.compressor1
     COMPRESSOR2 = args.compressor2
-  if args.accuracy != ACCURACY:
-      ACCURACY = ACCURACY1 = ACCURACY2 = args.accuracy
   elif args.accuracy1 != ACCURACY1 or args.accuracy2 != ACCURACY2:
     ACCURACY1 = args.accuracy1
     ACCURACY2 = args.accuracy2
