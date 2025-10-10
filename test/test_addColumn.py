@@ -1,5 +1,6 @@
 import argparse
 import array
+import json
 import sys
 from turtle import shape
 """
@@ -339,13 +340,13 @@ def run_complex():
 if __name__ == "__main__":  
   parser = argparse.ArgumentParser(description=
                                    'Test the column-wise compression using the Adios2StMan storage manager in casacore tables')
-  parser.add_argument("--compressor", type=str, default=COMPRESSOR, help="Compressor for REAL and IMAG columns")
+  parser.add_argument("--compressor", type=str, default=COMPRESSOR, help="Global data compressor")
   parser.add_argument("--compressor1", type=str, default=COMPRESSOR1, help="Compressor for REAL column")
   parser.add_argument("--compressor2", type=str, default=COMPRESSOR2, help="Compressor for IMAG column")
-  parser.add_argument("--accuracy", type=str, default=ACCURACY, help="Accuracy for REAL and IMAG columns")
+  parser.add_argument("--accuracy", type=str, default=ACCURACY, help="Global accuracy for data columns")
   parser.add_argument("--accuracy1", type=str, default=ACCURACY1, help="Accuracy for REAL column compressor")
   parser.add_argument("--accuracy2", type=str, default=ACCURACY2, help="Accuracy for IMAG column compressor")
-  parser.add_argument("--shape", type=int, nargs=3, default=ORIG_SHAPE, help="Shape of the data array")
+  parser.add_argument("--shape", type=str, default=ORIG_SHAPE, help="Shape of the data array")
   parser.add_argument("--dirname", type=str, default=DIRNAME, help="Output filename")
   parser.add_argument("--complex", action='store_true', help="(False) Write complex values directly")
   parser.add_argument("--plot", action='store_true', help="(False) Plot comparison histograms.")
@@ -353,9 +354,14 @@ if __name__ == "__main__":
   args = parser.parse_args()
   if args.accuracy != ACCURACY:
       ACCURACY = ACCURACY1 = ACCURACY2 = args.accuracy
+  if args.shape != ORIG_SHAPE:
+    print(args.shape)
+    ORIG_SHAPE = json.loads(args.shape)
   if args.plot:
     print(args.plot)
     PLOT = True
+  if args.dirname != DIRNAME: 
+    DIRNAME = args.dirname
   if args.compressor != COMPRESSOR:
      COMPRESSOR = COMPRESSOR1 = COMPRESSOR2 = args.compressor
      if COMPRESSOR == 'mgard_complex' or args.complex:
@@ -368,8 +374,4 @@ if __name__ == "__main__":
   elif args.accuracy1 != ACCURACY1 or args.accuracy2 != ACCURACY2:
     ACCURACY1 = args.accuracy1
     ACCURACY2 = args.accuracy2
-  if args.shape != ORIG_SHAPE:
-    ORIG_SHAPE = args.shape
-  if args.dirname != DIRNAME: 
-    DIRNAME = args.dirname
   run()
