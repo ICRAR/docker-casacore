@@ -1,5 +1,11 @@
 FROM icrar/casacore:latest
 #
+## Pull gits
+WORKDIR /scratch
+RUN git clone -b master https://gitlab.com/aroffringa/wsclean.git
+RUN git clone -b master https://gitlab.com/astron-idg/idg.git
+#RUN git clone -b master https://git.astron.nl/RD/EveryBeam.git
+#
 # Build IDG then EveryBeam then WSClean
 #
 RUN . /code/venv/bin/activate \
@@ -9,27 +15,28 @@ RUN . /code/venv/bin/activate \
     && pip install "pybind11[global]" \
     && pip install sphinx sphinx_rtd_theme breathe myst-parser
 #     
+WORKDIR /scratch
 # IDG
-RUN . /code/venv/bin/activate \
-    && mkdir idg/build \
-    && cd idg/build \
-    && cmake -CMAKE_INSTALL_PREFIX=/usr/local/idg/ .. \
-    && make -j 4 \
-    && make install \
-    && cd ../.. 
+#RUN . /code/venv/bin/activate \
+#    && mkdir idg/build \
+#    && cd idg/build \
+#    && cmake -CMAKE_INSTALL_PREFIX=/usr/local/idg/ .. \
+#    && make -j 4 \
+#    && make install \
+#    && cd ../.. 
 # Every Beam
-RUN . /code/venv/bin/activate \
-    && mkdir EveryBeam/build \
-    && cd EveryBeam/build \
-    && cmake -CMAKE_INSTALL_PREFIX=/usr/local/EveryBeam/ -i BUILD_WITH_PYTHON .. \
-    && make -j 4 \
-    && make install \
-    && cd ../.. 
+#RUN . /code/venv/bin/activate \
+#    && mkdir EveryBeam/build \
+#    && cd EveryBeam/build \
+#    && cmake -CMAKE_INSTALL_PREFIX=/usr/local/EveryBeam/ -i BUILD_WITH_PYTHON .. \
+#    && make -j 4 \
+#    && make install \
+#    && cd ../.. 
 # The MWA beam erquires .h5 file in the path
 #
 # WSClean
 RUN . /code/venv/bin/activate \
-    && mkdir wsclean/build \
+    && mkdir -p wsclean/build \
     && cd wsclean/build \
     && cmake .. \
     && make -j 4 \

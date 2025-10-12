@@ -14,7 +14,7 @@ RUN mkdir -p /code \
     && . venv/bin/activate \
     && pip install numpy \
     && git clone https://github.com/rtobar/casacore.git \
-    && cd casacore && git checkout adios2stman-name && cd .. \
+    && cd casacore && git checkout adios2stman-name && cd .. 
     # && git clone https://github.com/casacore/casacore.git
 # COPY /patch/tAdios2StMan.cc /code/casacore/tables/DataMan/test/
 RUN . /code/venv/bin/activate \
@@ -40,6 +40,7 @@ RUN . venv/bin/activate \
     && pip install --no-binary python-casacore python-casacore \
     && pip install ipython matplotlib \
     && scp -r /usr/local/local/lib/python3.12/dist-packages /code/venv/lib/python3.12/
+#
 COPY ./test ./test
 WORKDIR /scratch
 COPY ./docker/entrypoint.sh /
