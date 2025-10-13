@@ -12,7 +12,6 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     bison \
     libblas-dev \
     liblapack-dev \
-    libcfitsio-dev \
     wcslib-dev \
     libfftw3-dev \
     gfortran \

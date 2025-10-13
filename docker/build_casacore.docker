@@ -1,4 +1,16 @@
 FROM icrar/adios2-mgard:latest
+
+#
+# Build custom cfitsio that avoids function name clashes with zfp
+# See https://github.com/HEASARC/cfitsio/pull/98
+#
+RUN git clone https://github.com/rtobar/cfitsio -b stream_funcs_renamed \
+    && cd cfitsio \
+    && cmake -B build . -G Ninja  \
+    && cmake --build build \
+    && cmake --install build \
+    && ldconfig
+
 #
 # Build casacore
 #
