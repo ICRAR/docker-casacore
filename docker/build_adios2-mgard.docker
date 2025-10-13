@@ -1,4 +1,4 @@
-FROM icrar/ubuntu2404_clang:latest
+FROM icrar/ubuntu-base:latest
 #
 # Install WSRT Measures (extra casacore data, for tests)
 # Note: The file on the ftp site is updated daily. When warnings regarding leap

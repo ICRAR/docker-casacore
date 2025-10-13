@@ -1,10 +1,9 @@
 FROM icrar/casacore:latest
 #
 ## Pull gits
-WORKDIR /scratch
 RUN git clone -b master https://gitlab.com/aroffringa/wsclean.git
-RUN git clone -b master https://gitlab.com/astron-idg/idg.git
-#RUN git clone -b master https://git.astron.nl/RD/EveryBeam.git
+#   && git clone -b master https://gitlab.com/astron-idg/idg.git
+#   && git clone -b master https://git.astron.nl/RD/EveryBeam.git
 #
 # Build IDG then EveryBeam then WSClean
 #
@@ -15,7 +14,6 @@ RUN . /code/venv/bin/activate \
     && pip install "pybind11[global]" \
     && pip install sphinx sphinx_rtd_theme breathe myst-parser
 #     
-WORKDIR /scratch
 # IDG
 #RUN . /code/venv/bin/activate \
 #    && mkdir idg/build \
@@ -32,7 +30,7 @@ WORKDIR /scratch
 #    && make -j 4 \
 #    && make install \
 #    && cd ../.. 
-# The MWA beam erquires .h5 file in the path
+# The MWA beam requires .h5 file in the path
 #
 # WSClean
 RUN . /code/venv/bin/activate \

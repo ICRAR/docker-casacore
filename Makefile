@@ -2,6 +2,8 @@
 MY_GID=$(shell id -g)
 MY_UID=$(shell id -u) 
 MY_VOLUME=$(HOME)/scratch
+TARGET=ubuntu-base
+CONTAINER=casacore
 CMD=ipython
 
 .PHONY: help
@@ -12,32 +14,46 @@ help:             ## Show the help.
 	@echo ""
 	@fgrep "##" Makefile | fgrep -v fgrep | sed "s/##//g"
 
-.PHONY : build-all build-ubuntu-base build-adios2-mgard build-casacore
+.PHONY : build-all build-ubuntu-base build-adios2-mgard build-casacore build-wsclean
 ##build-all:         Build the complete stack of images. This takes very long.
-build-all : build-ubuntu-base build-adios-mgard build-casacore
+build-all : build-ubuntu-base build-adios-mgard build-casacore build-wsclean
+
+.PHONY : build
+build:            ## Build an image 
+	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
+	@docker build -f docker/build_$(TARGET).docker --tag icrar/$(TARGET) .
 
 build-ubuntu-base:## Build the ubuntu base image
-	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
-	@docker build -f docker/build_ubuntu2404_prep.docker --tag icrar/ubuntu2404_clang .
+	$(MAKE) build TARGET="ubuntu-base"
 
 build-adios-mgard:## Build the adios2-mgard image
-	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
-	@docker build -f docker/build_adios2-mgard.docker --tag icrar/adios2-mgard .
+	$(MAKE) build TARGET="adios2-mgard"
 
 build-casacore:   ## Build the casacore image
-	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
-	@docker build -f docker/build_casacore.docker --tag icrar/casacore .
+	$(MAKE) build TARGET="casacore"
+
+build-wsclean:    ## Build the wsclean image
+	$(MAKE) build TARGET="wsclean"
 
 .PHONY: start
-start:            ## run the final image with optional CMD variable
+start:            ## run an image image with optional CMD variable
 	@mkdir -p $(HOME)/scratch
 	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
-	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) CMD=$(CMD) MY_VOLUME=$(MY_VOLUME) docker compose -f docker/docker-compose.yaml run --rm casacore
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) CMD=$(CMD) MY_VOLUME=$(MY_VOLUME) docker compose -f docker/docker-compose-$(CONTAINER).yaml run --rm $(CONTAINER)
+
+start-casacore:   ## start the wsclean image into ipython
+	$(MAKE) start CONTAINER=casacore CMD=ipython
+
+start-wsclean:   ## start the wsclean image into bash
+	$(MAKE) start CONTAINER=wsclean CMD=bash
 
 .PHONY: stop
-stop:             ## Install using docker containers
-	@if ! command -v docker; then echo "Docker is not available; please confirm it is installed." && exit; fi
+stop:             ## stop the casacore container
 	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) CMD=$(CMD) MY_VOLUME=$(MY_VOLUME) docker compose -f docker/docker-compose.yaml run --rm --remove-orphans casacore echo
+
+.PHONY: stop-wsclean
+stop-wsclean:     ## stop the wsclean container
+	@MY_GID=$(MY_GID) MY_UID=$(MY_UID) CMD=$(CMD) MY_VOLUME=$(MY_VOLUME) docker compose -f docker/docker-compose-wsclean.yaml run --rm --remove-orphans wsclean echo
 
 .PHONY: test
 test:             ## Run a simple test

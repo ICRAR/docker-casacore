@@ -1,0 +1,34 @@
+FROM ubuntu:24.04
+# This just performs all the updates and installs casacore related
+# development packages
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y \
+    clang \
+    cmake \
+    git \
+    flex \
+    bison \
+    libblas-dev \
+    liblapack-dev \
+    libcfitsio-dev \
+    wcslib-dev \
+    libfftw3-dev \
+    gfortran \
+    libncurses5-dev \
+    libreadline6-dev \
+    libhdf5-serial-dev \
+    libboost-all-dev \
+    libgsl-dev \
+    python-is-python3 \
+    wget \
+    libomp-dev \
+    libopenmpi-dev \
+    python3-mpi4py \
+    python3.12-venv \
+    python3-pip \
+    tk-dev \
+    python3-tk \
+    pkg-config \
+    vim \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
