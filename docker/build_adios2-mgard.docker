@@ -8,21 +8,19 @@ FROM icrar/ubuntu-base:latest
 # Get and build sz compressor
 #
 RUN git clone https://github.com/szcompressor/SZ2.git \
-    && cd SZ2 && mkdir build && cd build \
-    && cmake .. \
-    && make \
-    && make install
+    && cd SZ2  \
+    && cmake -B build . -G Ninja \
+    && cmake --build build \
+    && cmake --install build
 #
 # get and build ZFP compressor
 #
 RUN mkdir /code && cd /code \
     && git clone https://github.com/LLNL/zfp.git \
     && cd zfp \
-    && mkdir build \
-    && cd build \
-    && cmake .. \
-    && cmake --build . --config Release \
-    && cmake --install . --config Release \
+    && cmake -B build . -DCMAKE_BUILD_TYPE=Release -G Ninja \
+    && cmake --build build --config Release \
+    && cmake --install build --config Release \
     && cd /code \
 #
 # get and build MGARD and install it to the right place
@@ -39,11 +37,11 @@ RUN mkdir /code && cd /code \
 RUN cd /code \
     && git clone https://github.com/ornladios/ADIOS2.git \
     && cd ADIOS2 \
-    && mkdir adios2-build && cd adios2-build \
-    && cmake .. -DMGARD=ON \
+    && cmake -B build . -G Ninja -DMGARD=ON \
 #
 # install ADIOS2
 #
     && export OMPI_CXX=/usr/bin/clang++ \
     && export OMPI_CC=/usr/bin/clang \
-    && make install -j `nproc`
+    && cmake --build build \
+    && cmake --install build
