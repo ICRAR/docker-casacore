@@ -136,7 +136,7 @@ for n in range(Ntime):
     #                 operations=[(compressor, adios_args)])
 t.close()
 
-t=table(filename)
+t=table(filename,readonly=False)
 for n in range(Ntime):
     data=t.getcol(datacol,nrow=Nbase,startrow=n*Nbase)
     vis=t.getcol('COPY',nrow=Nbase,startrow=n*Nbase)
@@ -145,9 +145,13 @@ for n in range(Ntime):
     print('COPY_STD %d/%d (rms error %f)\t'%(n,Ntime,np.nanstd((vis-data)[I,:,0])))
     vis=t.getcol('COPY_1D',nrow=Nbase,startrow=n*Nbase)
     print('COPY_1D %d/%d (rms error %f)\t'%(n,Ntime,np.nanstd((vis-data.reshape((-1,s[1]*s[2]))))))
+t.removecols('COPY')
+t.addcols(tabdesc,dminfo=dminfo)
+t.putcol('COPY',t.getcol(datacol))
+t.close()
+t=table(filename)
+print('Errors after single write:',np.nanstd(t.getcol(datacol)-t.getcol('COPY')))
 
-vis=t.getcol('COPY_1D')
-data=t.getcol(datacol)
 
 print('Close')
 t.close()
