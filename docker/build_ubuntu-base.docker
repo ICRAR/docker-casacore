@@ -6,12 +6,12 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y \
     clang \
     cmake \
+    ninja-build \
     git \
     flex \
     bison \
     libblas-dev \
     liblapack-dev \
-    libcfitsio-dev \
     wcslib-dev \
     libfftw3-dev \
     gfortran \

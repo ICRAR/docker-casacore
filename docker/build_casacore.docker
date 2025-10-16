@@ -1,4 +1,16 @@
 FROM icrar/adios2-mgard:latest
+
+#
+# Build custom cfitsio that avoids function name clashes with zfp
+# See https://github.com/HEASARC/cfitsio/pull/98
+#
+RUN git clone https://github.com/rtobar/cfitsio -b stream_funcs_renamed \
+    && cd cfitsio \
+    && cmake -B build . -G Ninja  \
+    && cmake --build build \
+    && cmake --install build \
+    && ldconfig
+
 #
 # Build casacore
 #
@@ -18,19 +30,20 @@ RUN mkdir -p /code \
     # && git clone https://github.com/casacore/casacore.git
 # COPY /patch/tAdios2StMan.cc /code/casacore/tables/DataMan/test/
 RUN . /code/venv/bin/activate \
-    && mkdir -p /code/casacore/build \
-    && cd /code/casacore/build \
-    && cmake .. \
+    && cd /code/casacore \
+    && cmake -B build -G Ninja . \
     -DBUILD_TESTING=OFF \
     -DUSE_OPENMP=ON \
     -DUSE_HDF5=ON \
     -DUSE_ADIOS2=ON \
     -DUSE_MPI=ON \
+    -DUSE_PCH=ON \
     -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} \
     -DDATA_DIR=/usr/local/share/casacore/data \
     -DCMAKE_C_COMPILER=/usr/bin/clang \
     -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
-    && make -j`nproc` install \
+    && cmake --build build \
+    && cmake --install build \
     && ldconfig
 #
 # Build python-casacore from source

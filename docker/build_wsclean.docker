@@ -34,12 +34,11 @@ RUN . /code/venv/bin/activate \
 #
 # WSClean
 RUN . /code/venv/bin/activate \
-    && mkdir -p wsclean/build \
-    && cd wsclean/build \
-    && cmake .. \
-    && make -j 4 \
-    && make install \
-    && cd ../.. 
+    && cd wsclean \
+    && cmake -B build -G Ninja \
+    && cmake --build build \
+    && cmake --install build \
+    && cd ../..
 WORKDIR /scratch
 COPY ./docker/entrypoint.sh /
 ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
