@@ -1,6 +1,7 @@
 #!/bin/bash
 . /code/venv/bin/activate
-scp /code/test/* /scratch
+scp -r /code/test /scratch
+scp -r /code/demo /scratch
 export HOME=/scratch
 export IPYTHONDIR=$HOME/.ipython
 export MPLCONFIGDIR=$HOME
