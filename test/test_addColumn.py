@@ -41,6 +41,7 @@ from contextlib import contextmanager
 
 
 # various settings
+COMPRESSORS = ["mgard", "mgard_complex", "zfp", "sz"]
 COMPRESSOR = "mgard"
 COMPRESSOR1 = "mgard"
 COMPRESSOR2 = "mgard"
@@ -48,7 +49,7 @@ ACCURACY = "0.1"
 ACCURACY1 = "0.1"
 ACCURACY2 = "0.1"
 ORIG_SHAPE = [10000, 120, 4]
-DIRNAME = "../ttable_adios_test"
+DIRNAME = "/scratch/ttable_adios_test"
 PLOT = False
 
 def get_size(msdir):
@@ -344,7 +345,7 @@ def plot(vis:array, visr:array, visi:array, cvis:array=None):
     plt.xlim((-xscale, xscale))
        
   plt.yscale("log")
-  plt.title(f"original-compressed")
+  plt.title(f"original-compressed ({COMPRESSOR})")
   plt.xlabel(f"original-compressed")
   plt.ylabel("Log(Number) of occurance")
   plt.legend()
@@ -357,6 +358,7 @@ def run()-> tuple:
   size = functools.reduce(operator.mul, ORIG_SHAPE[1:], ORIG_SHAPE[0] * 8)
 
   print("Settings:")
+  print(f"  Compressor for DATA column: {COMPRESSOR} (Accuracy: {ACCURACY})")
   print(f"  Compressor for REAL column: {COMPRESSOR1} (Accuracy: {ACCURACY1})")
   print(f"  Compressor for IMAG column: {COMPRESSOR2} (Accuracy: {ACCURACY2})")
   print(f"  Data shape: {ORIG_SHAPE}")
@@ -404,26 +406,27 @@ if __name__ == "__main__":
   args = parser.parse_args()
   if args.accuracy != ACCURACY:
       ACCURACY = ACCURACY1 = ACCURACY2 = args.accuracy
+  elif args.accuracy1 != ACCURACY1 or args.accuracy2 != ACCURACY2:
+    ACCURACY1 = args.accuracy1
+    ACCURACY2 = args.accuracy2
   if args.shape != ORIG_SHAPE:
-    print(args.shape)
     ORIG_SHAPE = json.loads(args.shape)
   if args.plot:
-    print(args.plot)
     PLOT = True
   if args.dirname != DIRNAME: 
     DIRNAME = args.dirname
   if args.compressor != COMPRESSOR:
+    if args.compressor not in COMPRESSORS:
+      print(f"compressor argument needs to be one of {COMPRESSORS}")
+      sys.exit()
     if args.compressor == 'mgard_complex':
       COMPRESSOR = 'mgard_complex'
       COMPRESSOR1 = COMPRESSOR2 = 'mgard'
     else:
       COMPRESSOR = COMPRESSOR1 = COMPRESSOR2 = args.compressor
-    run()
+    vis, visr, visi, cvis = run()
     sys.exit()
   elif args.compressor1 != COMPRESSOR1 or args.compressor2 != COMPRESSOR2:
     COMPRESSOR1 = args.compressor1
     COMPRESSOR2 = args.compressor2
-  elif args.accuracy1 != ACCURACY1 or args.accuracy2 != ACCURACY2:
-    ACCURACY1 = args.accuracy1
-    ACCURACY2 = args.accuracy2
   vis, visr, visi, cvis = run()
