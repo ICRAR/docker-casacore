@@ -366,7 +366,6 @@ def plot(vis:array, visr:array, visi:array, cvis:array=None):
 def write_steps(vis:array, col:str='STEPS', dm_type:str='Adios2StMan'):
   """Write data in steps into a new STEPS table.
   """
-  COLNAME = col
   steps = 3
   tab = table(DIRNAME, readonly=False, ack=False)
   shape = vis.shape
@@ -374,15 +373,15 @@ def write_steps(vis:array, col:str='STEPS', dm_type:str='Adios2StMan'):
   nrows_step = nrows//steps
   cell_shape = shape[1:] if len(shape) > 1 else None
   coldesc, dminfo, tabdesc = create_column_desc(
-    COLNAME, 'complex', cell_shape, dm_type=dm_type,
-    dm_group=COLNAME.lower(), dm_name=COLNAME.lower(), 
+    col, 'complex', cell_shape, dm_type=dm_type,
+    dm_group=col.lower(), dm_name=col.lower(), 
     compressor='', accuracy='')
   tab.addcols(coldesc, dminfo)
   tsteps = 0
   for step in range(steps):
     value = vis[step*nrows_step:(step+1)*nrows_step]
     tic = time.time()
-    tab.putcol(COLNAME, 
+    tab.putcol(col, 
                value=value,
                startrow = step*nrows_step,
                nrow = nrows_step
@@ -390,8 +389,81 @@ def write_steps(vis:array, col:str='STEPS', dm_type:str='Adios2StMan'):
     tsteps +=time.time() - tic
     print(f'{nrows_step} rows with {len(np.where(value.reshape(-1)==0)[0])} zero values written in {tsteps}s')
   tab.close()
-  print(f'wrote compressed complex visibilities to {COLNAME} column')
+  print(f'wrote compressed complex visibilities to {col} column')
   return tsteps
+
+def read_steps(col:str='STEPS', steps:int=3):
+  """
+  Read a column from a table in multiple reads and return the assembled array.
+
+  This function opens a table at DIRNAME (readonly), determines the per-row data shape
+  from the column descriptor, allocates an output NumPy array of the given dtype, and
+  reads the table column in `steps` sequential chunks using table.getcol. Timing for
+  each chunk is printed and the total read time is printed before returning. The table
+  is closed before returning.
+
+  Parameters
+  ----------
+  col : str, optional
+    Name of the column to read from the table. Default: 'STEPS'.
+  steps : int, optional
+    Number of equally-sized steps (chunks) to split the read into. Default: 3.
+    Each step reads floor(nrows / steps) rows. If `steps <= 0` a ValueError is raised.
+
+  Returns
+  -------
+  numpy.ndarray
+    An array of shape (nrows_used, shape[0]) where `shape[0]` is taken from the
+    column descriptor for `col`, and `nrows_used` is `steps * floor(nrows / steps)`.
+    The array dtype is `valuetype`.
+
+  Notes
+  -----
+  - The function uses integer division to compute the per-step row count:
+    nrows_step = nrows // steps. Any remainder rows (nrows % steps) are not read
+    by this implementation and therefore are not present in the returned array.
+  - The function depends on a global DIRNAME value and on a `table` API that
+    provides `nrows()`, `getcoldesc(col)` returning a dict with key 'shape',
+    `getcol(col, startrow, nrow)`, and `close()`.
+  - The function prints timing information for each step and a final summary.
+  - The table is opened with readonly=True and ack=False.
+
+  Raises
+  ------
+  ValueError
+    If `steps` is not a positive integer or if resulting `nrows_step` is zero
+    (i.e., when `steps` > nrows).
+  KeyError, IndexError, TypeError
+    May be raised if the table API does not provide the expected descriptors or
+    if the column shape metadata is not in the expected format.
+
+  Example
+  -------
+  >>> # assuming DIRNAME and table API are available and tab has nrows = 300
+  >>> arr = read_steps(col='DATA', valuetype=np.complex128, steps=3)
+  >>> arr.shape
+  (300, N)  # N is the per-row length obtained from the column descriptor
+  """
+  tab = table(DIRNAME, readonly=True, ack=False)
+  nrows = tab.nrows()
+  nrows_step = nrows//steps
+  tsteps = 0
+  for step in range(steps):
+    tic = time.time()
+    startrow = step*nrows_step
+    v = tab.getcol(col,
+               startrow = startrow,
+               nrow = nrows_step
+               )
+    tsteps +=time.time() - tic
+    if step == 0:
+      value = np.array(v)
+    else:
+      value = np.append(value, np.array(v), axis = 0)
+    print(f'{nrows_step} rows read in {tsteps:.3f}s')
+  tab.close()
+  print(f'read compressed complex visibilities to {col} column in {tsteps:.2f}s')
+  return value
 
 
 def run()-> tuple:
