@@ -1,7 +1,3 @@
-import argparse
-import array
-import json
-import sys
 """
 This module provides a test script for evaluating the performance and accuracy of column-wise compression
 using the Adios2StMan storage manager in casacore tables. It generates synthetic complex data, writes it to
@@ -27,6 +23,11 @@ Usage:
                [--accuracy ACC] [--accuracy1 ACC1] [--accuracy2 ACC2]
                [--shape N M K] [--dirname DIR]
 """
+import argparse
+import array
+import json
+import sys
+
 import functools
 import operator
 import os, time
@@ -41,6 +42,8 @@ from casacore.tables import (
 import numpy as np
 import adios2
 from contextlib import contextmanager
+from math import sqrt
+
 
 
 # various settings
@@ -55,6 +58,20 @@ ORIG_SHAPE = [10000, 120, 4]
 DIRNAME = "/scratch/ttable_adios_test"
 PLOT = False
 STEPS = False
+
+def find_smallest_divisor(num:int) -> int:
+    """Find the smalles divisor of num greater or equal to 3.
+
+    Args:
+        num (int): The number to be considered
+
+    Returns:
+        int: The smallest number >=3 that divides num withoput rest.
+  """
+    for i in range(3, int(sqrt(num)) + 1):
+        if num % i == 0:
+            return i
+    return num
 
 def get_size(msdir):
     size = 0
@@ -363,10 +380,9 @@ def plot(vis:array, visr:array, visi:array, cvis:array=None):
   plt.legend()
   plt.show()
 
-def write_steps(vis:array, col:str='STEPS', dm_type:str='Adios2StMan'):
+def write_steps(vis:array, col:str='STEPS', steps:int=3, dm_type:str='Adios2StMan'):
   """Write data in steps into a new STEPS table.
   """
-  steps = 3
   tab = table(DIRNAME, readonly=False, ack=False)
   shape = vis.shape
   nrows = shape[0]
@@ -387,9 +403,8 @@ def write_steps(vis:array, col:str='STEPS', dm_type:str='Adios2StMan'):
                nrow = nrows_step
                )
     tsteps +=time.time() - tic
-    print(f'{nrows_step} rows with {len(np.where(value.reshape(-1)==0)[0])} zero values written in {tsteps}s')
   tab.close()
-  print(f'wrote compressed complex visibilities to {col} column')
+  print(f'Wrote {nrows} compressed complex visibilities to {col} column in {tsteps:.3f}s')
   return tsteps
 
 def read_steps(col:str='STEPS', steps:int=3):
@@ -460,9 +475,8 @@ def read_steps(col:str='STEPS', steps:int=3):
       value = np.array(v)
     else:
       value = np.append(value, np.array(v), axis = 0)
-    print(f'{nrows_step} rows read in {tsteps:.3f}s')
   tab.close()
-  print(f'read compressed complex visibilities to {col} column in {tsteps:.2f}s')
+  print(f'Read compressed complex visibilities from {col} column in {tsteps:.2f}s')
   return value
 
 
@@ -505,8 +519,10 @@ def run()-> tuple:
   if PLOT:
     plot(vis, visr, visi, cvis)
   if STEPS:
-    write_steps(vis)
-    rst = read_steps()
+    steps = find_smallest_divisor(ORIG_SHAPE[0])
+    print(f'Using {steps} steps to write and read new column.')
+    write_steps(vis, steps=steps)
+    rst = read_steps(steps=steps)
   return vis, visr, visi, cvis, rst
 
 if __name__ == "__main__":  
