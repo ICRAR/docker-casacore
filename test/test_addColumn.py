@@ -480,6 +480,7 @@ def run()-> tuple:
   print(f"  Output directory: {DIRNAME}")
   print()
 
+  rst = None
   vis, tnocomp_complex = write_ORIG_tiled()
   tcomp_real, tcomp_imag = write_real_imag(vis)
   twrite_complex = write_DATA_complex(vis)
@@ -505,7 +506,8 @@ def run()-> tuple:
     plot(vis, visr, visi, cvis)
   if STEPS:
     write_steps(vis)
-  return vis, visr, visi, cvis
+    rst = read_steps()
+  return vis, visr, visi, cvis, rst
 
 if __name__ == "__main__":  
   parser = argparse.ArgumentParser(description=
@@ -544,9 +546,9 @@ if __name__ == "__main__":
       COMPRESSOR1 = COMPRESSOR2 = 'mgard'
     else:
       COMPRESSOR = COMPRESSOR1 = COMPRESSOR2 = args.compressor
-    vis, visr, visi, cvis = run()
+    vis, visr, visi, cvis, rst = run()
     sys.exit()
   elif args.compressor1 != COMPRESSOR1 or args.compressor2 != COMPRESSOR2:
     COMPRESSOR1 = args.compressor1
     COMPRESSOR2 = args.compressor2
-  vis, visr, visi, cvis = run()
+  vis, visr, visi, cvis, rst = run()
