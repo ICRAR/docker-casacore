@@ -2,7 +2,6 @@ import argparse
 import array
 import json
 import sys
-from turtle import color, shape
 """
 This module provides a test script for evaluating the performance and accuracy of column-wise compression
 using the Adios2StMan storage manager in casacore tables. It generates synthetic complex data, writes it to
@@ -33,8 +32,12 @@ import operator
 import os, time
 from matplotlib import pyplot as plt
 
-from casacore.tables import (makearrcoldesc, table,
-                          maketabdesc, makedminfo)
+from casacore.tables import (
+  makearrcoldesc,
+  makescacoldesc,
+  table,
+  maketabdesc,
+  makedminfo)
 import numpy as np
 import adios2
 from contextlib import contextmanager
@@ -51,6 +54,7 @@ ACCURACY2 = "0.1"
 ORIG_SHAPE = [10000, 120, 4]
 DIRNAME = "/scratch/ttable_adios_test"
 PLOT = False
+STEPS = False
 
 def get_size(msdir):
     size = 0
@@ -59,12 +63,14 @@ def get_size(msdir):
                     for name in files + dirs)
     return size
 
-def create_ADIOS2_column_desc(col_name:str, valuetype:str, cell_shape:list, compressor:str='', 
-                              accuracy:str='', dm_group:str='group0', dm_name:str='asm1', tabdesc:dict={}) -> tuple:
-  """Create an ADIOS2 column for a table.
+def create_column_desc(col_name:str, valuetype:str, cell_shape:list, compressor:str='', 
+                              accuracy:str='', dm_group:str='group0', dm_name:str='asm1', 
+                              tabdesc:dict={}, dm_type:str='Adios2StMan') -> tuple:
+  """Create a column for a table using Adios2StMan or specified column manager.
 
   Args:
       col_name (str): Name of the column to be created.
+      dm_type (str): Storage manager to be used (default Adios2StMan)
       valuetype (str): The type of the value of the column.
       cell_shape (list): Shape of a single cell.
       compressor (str, optional): Compressor operator to be used. Defaults to 'mgard'.
@@ -76,12 +82,18 @@ def create_ADIOS2_column_desc(col_name:str, valuetype:str, cell_shape:list, comp
   Returns:
       tuple: (coldesc, dminfo, tabdesc)
   """
-  coldesc = makearrcoldesc(col_name, '',
-              valuetype=valuetype, shape=cell_shape,
-              datamanagergroup=dm_group, datamanagertype='Adios2StMan'
-          )
-  dminfo = {"TYPE": "Adios2StMan", "NAME": dm_name, "SPEC": {} }
-  if compressor != ''  and accuracy != '':
+  if cell_shape is None or len(cell_shape) == 0:
+    coldesc = makescacoldesc(col_name, '',
+                valuetype=valuetype,
+                datamanagergroup=dm_group, datamanagertype=dm_type
+            )
+  else:
+    coldesc = makearrcoldesc(col_name, '',
+                valuetype=valuetype, shape=cell_shape,
+                datamanagergroup=dm_group, datamanagertype=dm_type
+            )
+  dminfo = {"TYPE": dm_type, "NAME": dm_name, "SPEC": {} }
+  if dm_type == 'Adios2StMan' and compressor != ''  and accuracy != '':
      dminfo['SPEC'] = {"OPERATORPARAMS": {col_name: {"Operator": compressor, "Accuracy": accuracy}}}
   if not tabdesc:
       tabdesc = maketabdesc(coldesc)
@@ -152,7 +164,7 @@ def write_ORIG_adios():
 
   # setup table
   # Create the table
-  coldesc, dminfo, tabdesc = create_ADIOS2_column_desc(
+  coldesc, dminfo, tabdesc = create_column_desc(
      'ORIG', 'complex', cell_shape, dm_group='asm1', dm_name='asm1')
   tab = table(DIRNAME, tabledesc=tabdesc, dminfo=dminfo, readonly=False, ack=False)
   tab.addrows(nrows)
@@ -185,7 +197,7 @@ def write_real_imag(vis:array) -> tuple:
   ------------
   - Opens or creates a table at DIRNAME (using table(..., readonly=False, ack=False)).
   - Adds two ADIOS2-backed float columns named 'REAL' and 'IMAG' to the table by
-    calling create_ADIOS2_column_desc(...) and tab.addcols(...).
+    calling create_column_desc(...) and tab.addcols(...).
   - Writes np.real(vis) into the 'REAL' column and np.imag(vis) into the 'IMAG'
     column using tab.putcol(...).
   - Uses compressor and accuracy settings provided by COMPRESSOR1/COMPRESSOR2 and
@@ -204,7 +216,7 @@ def write_real_imag(vis:array) -> tuple:
   -----
   - The function measures only the time taken to perform the column write
     operations (the intervals around tab.putcol calls) and returns those durations.
-  - The implementation expects helper symbols and configuration (create_ADIOS2_column_desc,
+  - The implementation expects helper symbols and configuration (create_column_desc,
     table, DIRNAME, cell_shape, COMPRESSOR1, COMPRESSOR2, ACCURACY1, ACCURACY2, etc.)
     to be defined in the surrounding module scope.
   Example
@@ -215,7 +227,7 @@ def write_real_imag(vis:array) -> tuple:
   cell_shape = ORIG_SHAPE[1:]
   tab = table(DIRNAME, readonly=False, ack=False)
   # add and write REAL column
-  coldesc, dminfo, tabdesc = create_ADIOS2_column_desc(
+  coldesc, dminfo, tabdesc = create_column_desc(
      'REAL', 'float', cell_shape, dm_group='real', dm_name='real', 
      compressor=COMPRESSOR1, accuracy=ACCURACY1)
   tab.addcols(coldesc, dminfo)
@@ -224,7 +236,7 @@ def write_real_imag(vis:array) -> tuple:
   comp_real = time.time() - tic
 
   # add and write IMAG column
-  coldesc, dminfo, tabdesc = create_ADIOS2_column_desc(
+  coldesc, dminfo, tabdesc = create_column_desc(
      'IMAG', 'float', cell_shape, dm_group='imag', dm_name='imag',
      compressor=COMPRESSOR2, accuracy=ACCURACY2, tabdesc=tabdesc)
   tab.addcols(coldesc, dminfo)
@@ -286,7 +298,7 @@ def write_DATA_complex(vis:array):
   shape = vis.shape
   nrows = shape[0]
   cell_shape = shape[1:]
-  coldesc, dminfo, tabdesc = create_ADIOS2_column_desc(
+  coldesc, dminfo, tabdesc = create_column_desc(
     'DATA', 'complex', cell_shape, dm_group='asm2', dm_name='asm2', 
     compressor=COMPRESSOR, accuracy=ACCURACY)
   tab.addcols(coldesc, dminfo)
@@ -351,6 +363,37 @@ def plot(vis:array, visr:array, visi:array, cvis:array=None):
   plt.legend()
   plt.show()
 
+def write_steps(vis:array, col:str='STEPS', dm_type:str='Adios2StMan'):
+  """Write data in steps into a new STEPS table.
+  """
+  COLNAME = col
+  steps = 3
+  tab = table(DIRNAME, readonly=False, ack=False)
+  shape = vis.shape
+  nrows = shape[0]
+  nrows_step = nrows//steps
+  cell_shape = shape[1:] if len(shape) > 1 else None
+  coldesc, dminfo, tabdesc = create_column_desc(
+    COLNAME, 'complex', cell_shape, dm_type=dm_type,
+    dm_group=COLNAME.lower(), dm_name=COLNAME.lower(), 
+    compressor='', accuracy='')
+  tab.addcols(coldesc, dminfo)
+  tsteps = 0
+  for step in range(steps):
+    value = vis[step*nrows_step:(step+1)*nrows_step]
+    tic = time.time()
+    tab.putcol(COLNAME, 
+               value=value,
+               startrow = step*nrows_step,
+               nrow = nrows_step
+               )
+    tsteps +=time.time() - tic
+    print(f'{nrows_step} rows with {len(np.where(value.reshape(-1)==0)[0])} zero values written in {tsteps}s')
+  tab.close()
+  print(f'wrote compressed complex visibilities to {COLNAME} column')
+  return tsteps
+
+
 def run()-> tuple:
   """Write and read the table and create a DATA column from the compressed
   REAL and IMAG parts. Plot differences histograms.
@@ -388,6 +431,8 @@ def run()-> tuple:
         f'{(tdecomp_real+tdecomp_imag):.3f} s ({((tdecomp_real+tdecomp_imag)/tread_complex):.1f}x)\n\n')
   if PLOT:
     plot(vis, visr, visi, cvis)
+  if STEPS:
+    write_steps(vis)
   return vis, visr, visi, cvis
 
 if __name__ == "__main__":  
@@ -401,6 +446,7 @@ if __name__ == "__main__":
   parser.add_argument("--accuracy2", type=str, default=ACCURACY2, help="Accuracy for IMAG column compressor")
   parser.add_argument("--shape", type=str, default=ORIG_SHAPE, help="Shape of the data array")
   parser.add_argument("--dirname", type=str, default=DIRNAME, help="Output filename")
+  parser.add_argument("--steps", action='store_true', help="(False) Write a STEPS column in steps.")
   parser.add_argument("--plot", action='store_true', help="(False) Plot comparison histograms.")
 
   args = parser.parse_args()
@@ -411,6 +457,8 @@ if __name__ == "__main__":
     ACCURACY2 = args.accuracy2
   if args.shape != ORIG_SHAPE:
     ORIG_SHAPE = json.loads(args.shape)
+  if args.steps:
+    STEPS = True
   if args.plot:
     PLOT = True
   if args.dirname != DIRNAME: 
