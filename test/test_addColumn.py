@@ -44,7 +44,7 @@ from contextlib import contextmanager
 
 
 # various settings
-COMPRESSORS = ["mgard", "mgard_complex", "zfp", "sz"]
+COMPRESSORS = ["mgard", "mgard_complex", "zfp", "sz", "None"]
 COMPRESSOR = "mgard"
 COMPRESSOR1 = "mgard"
 COMPRESSOR2 = "mgard"
@@ -544,6 +544,8 @@ if __name__ == "__main__":
     if args.compressor == 'mgard_complex':
       COMPRESSOR = 'mgard_complex'
       COMPRESSOR1 = COMPRESSOR2 = 'mgard'
+    elif args.compressor == 'None':
+      COMPRESSOR = COMPRESSOR1 = COMPRESSOR2 = ''
     else:
       COMPRESSOR = COMPRESSOR1 = COMPRESSOR2 = args.compressor
     vis, visr, visi, cvis, rst = run()
