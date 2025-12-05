@@ -57,7 +57,7 @@ def find_smallest_divisor(num:int) -> int:
     return num
 
 def get_size(msdir):
-    size = 0
+    size = os.path.getsize(msdir)
     for root, dirs, files in os.walk(msdir):
         size += sum(os.path.getsize(os.path.join(root, name))
                     for name in files + dirs)
@@ -153,7 +153,7 @@ def run()-> tuple:
     tsteps = time.time()-tic
     print(f'Read {Nbase} compressed complex visibilities from {DATACOL} column in {tsteps:.3f}s')
     s=vis.shape
-    if COMPRESSOR == "mgard_complex":
+    if (COMPRESSOR == "mgard_complex")|(COMPRESSOR == "mgard"):
         vis=vis.reshape(-1)
         Inan=np.where(np.isnan(vis)==True)[0]
         vis[Inan]=0
@@ -183,10 +183,12 @@ def run()-> tuple:
   t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
   tb.close()
 
-  t_on_disk_size = get_size(f'{FILENAME}/table.f{t_seq}i')
+  t_on_disk_size = get_size(f'{FILENAME}/table.f{t_seq}_TSM1')
+  a_on_disk_size = get_size(f'{FILENAME}/table.f{a_seq}.bp')
+  rat_on_disk_size=100.*a_on_disk_size/t_on_disk_size
+  print(f'Native size: {t_on_disk_size} Compressed size: {a_on_disk_size} or {rat_on_disk_size:.1f}%')
   #print(f'ORIG write time: {tnocomp_complex:.3f}')
   #print(f'REAL[{COMPRESSOR1}] compression and write time: {tcomp_real:.3f}')
-  a_on_disk_size = get_size(f'{FILENAME}/table.f{a_seq}.bp')
   #print(f'IMAG[{COMPRESSOR2}] compression and write time: {tcomp_imag:.3f}\n')
   #print('Total compression and write time: '
   #      f'{(tcomp_real+tcomp_imag):.3f} ({((tcomp_real+tcomp_imag)/tnocomp_complex):.1f}x)\n\n')
