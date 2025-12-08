@@ -28,7 +28,7 @@ import sys
 
 import functools
 import operator
-import os, time
+import os, time, shutil
 from matplotlib import pyplot as plt
 
 from casacore.tables import (
@@ -71,18 +71,23 @@ MODE = 'ABS';
 ACCURACY = "0.1";
 FILENAME = "1197634368.ms";
 DATACOL = "CORRECTED_DATA";
+DELETEOLD = False
 PLOT = False
-STEPS = False
+STEPS = 0
 
-def run()-> tuple:
+def run(DATACOL=DATACOL,FILENAME=FILENAME,
+        STEPS=STEPS,ACCURACY=ACCURACY,COMPRESSOR=COMPRESSOR,
+        DELETEOLD=DELETEOLD,PLOT=PLOT)-> tuple:
   """Write and read the table and create a copy of the DATA column from the DATA
   """
   tb=table(FILENAME,readonly=False)
   try:
+      print(f'Opening data column {DATACOL}')
       SHAP=np.array(tb.getcol(DATACOL,nrow=1).shape)
   except:
       #print('No datacolumn %s trying "DATA"'%(DATACOL))
       DATACOL = 'DATA'
+      print(f'Opening data column {DATACOL}')
       SHAP=np.array(tb.getcol(DATACOL,nrow=1).shape)
   SHAP[0]=tb.nrows()
   size = functools.reduce(operator.mul, SHAP[1:], SHAP[0] * 8)
@@ -90,7 +95,7 @@ def run()-> tuple:
   print("Settings:")
   print(f"  Compressor for {DATACOL} column: {COMPRESSOR} (Accuracy: {ACCURACY})")
   print(f"  Data shape: {SHAP}")
-  print(f"  Output directory: {FILENAME}")
+  print(f"  MS File: {FILENAME}")
   print()
 
   cell_shape=SHAP[1:]
@@ -120,27 +125,44 @@ def run()-> tuple:
         {
             'group1': {
                 'OPERATORPARAMS': {
-                    'COPY_DATA': {
-                        'Operator': COMPRESSOR,
-                        'mode': MODE,
-                        'Accuracy': str(ACCURACY)}
+                    'COPY_DATA': {}
                } } } )
 
   if 'COPY_ADIOS' in tb.colnames():
+    if DELETEOLD:
       print('Remove old adios COPY')
+      a_seq=tb.getdminfo("COPY_ADIOS")["SEQNR"]
       tb.removecols('COPY_ADIOS')
+      print(f'Removing {FILENAME}/table.f{a_seq}.bp')
+      shutil.rmtree(f'{FILENAME}/table.f{a_seq}.bp')
+      tb.addcols(Atabdesc,dminfo=Adminfo)
+    else:
+      print('Reusing old adios COPY')
+  else:
+      tb.addcols(Atabdesc,dminfo=Adminfo)
+      
   if 'COPY_DATA' in tb.colnames():
+    if DELETEOLD:
       print('Remove old standard COPY_DATA')
+      #t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
       tb.removecols('COPY_DATA')
-  tb.addcols(Atabdesc,dminfo=Adminfo)
-  tb.addcols(Ttabdesc,dminfo=Tdminfo)
+      #print(f'Removing {FILENAME}/table.f{t_seq}_TSM1')
+      #shutil.rmtree(f'{FILENAME}/table.f{t_seq}_TSM1')
+      tb.addcols(Ttabdesc,dminfo=Tdminfo)
+    else:
+      print('Reusing old adios COPY')
+  else:
+      tb.addcols(Ttabdesc,dminfo=Tdminfo)
 
-  if STEPS:
-    steps=len(np.unique(tb.getcol('TIME')))
+  if STEPS: # not equal zero
+    steps=STEPS
     Nbase=int(SHAP[0]/steps)
-    if (Nbase*steps!=SHAP[0]):
-        steps = find_smallest_divisor(SHAP[0])    
-        Nbase=SHAP[0]/steps
+    if steps<0:
+        steps=len(np.unique(tb.getcol('TIME')))
+        Nbase=int(SHAP[0]/steps)
+        if (Nbase*steps!=SHAP[0]):
+            steps = find_smallest_divisor(SHAP[0])    
+            Nbase=SHAP[0]/steps
     print(f'Using {steps} steps to write and read new columns in steps of {Nbase}.')
   else:
     steps=1
@@ -175,6 +197,14 @@ def run()-> tuple:
     vis=tb.getcol('COPY_ADIOS',nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
     print(f'Read {Nbase} compressed complex visibilities from COPY_ADIOS column in {tsteps:.3f}s')
+    if n==0:
+        data=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
+        a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
+        a2=tb.getcol('ANTENNA2',nrow=Nbase,startrow=n*Nbase)
+        I=np.where(a1!=a2)[0]
+        tic=np.nanstd(data[I])
+        data-=vis
+        print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'Standard',tic)
     tic = time.time()
     tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
@@ -208,16 +238,21 @@ if __name__ == "__main__":
                                    'Test the column-wise compression using the Adios2StMan storage manager in casacore tables')
   parser.add_argument("--compressor", type=str, default=COMPRESSOR, help="Global data compressor")
   parser.add_argument("--accuracy", type=str, default=ACCURACY, help="Global accuracy for data columns")
-  parser.add_argument("--filename", type=str, default=FILENAME, help="Output filename")
+  parser.add_argument("--filename", type=str, default=FILENAME, help="MS filename")
   parser.add_argument("--datacol", type=str, default=DATACOL, help="Data Column")
-  parser.add_argument("--steps", action='store_true', help="(False) Write a STEPS column in steps.")
+  parser.add_argument("--steps", type=int, default=0, help="Write a STEPS column in this number of steps.")
   parser.add_argument("--plot", action='store_true', help="(False) Plot comparison histograms.")
+  parser.add_argument("--reuse", action='store_true', help="(False) delete and remake columns")
 
+  DELETEOLD=True
   args = parser.parse_args()
   if args.accuracy != ACCURACY:
       ACCURACY = args.accuracy
   if args.steps:
-    STEPS = (STEPS==False) # Swap the setting
+    STEPS = args.steps #(STEPS==False) # Swap the setting
+  if args.reuse:
+    print('Swapping delete flag ',DELETEOLD)
+    DELETEOLD = (args.reuse==False) # Swap the setting for delete
   if args.plot:
     PLOT = True
   if args.filename != FILENAME: 
@@ -229,7 +264,9 @@ if __name__ == "__main__":
       sys.exit()
   else:
       COMPRESSOR = args.compressor
-  print(FILENAME,DATACOL)    
-  run()
+  #print(FILENAME,DATACOL,DELETEOLD,COMPRESSOR,ACCURACY)    
+  run(DATACOL=DATACOL,FILENAME=FILENAME,
+      STEPS=STEPS,ACCURACY=ACCURACY,COMPRESSOR=COMPRESSOR,
+      DELETEOLD=DELETEOLD,PLOT=PLOT)
   sys.exit()
   
