@@ -232,7 +232,31 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
   #      f'{(tdecomp_real+tdecomp_imag):.3f} s ({((tdecomp_real+tdecomp_imag)/tread_complex):.1f}x)\n\n')
   #if PLOT:
   #  plot(vis, visr, visi, cvis)
-    
+
+HISTORY=True
+if HISTORY==True:
+  import time
+  tb=tables.table(FILENAME+'/HISTORY',readonly=False)
+  n=tb.nrows() #n=-1 # Stick remarks at the end. Could loose important info ..
+  tb.addrows(nrows=1)
+  #d=t2.getcol('CLI_COMMAND')#,nrow=(t2.nrows()-1))
+  #n=d['shape'];n[0]+=1;d['shape']=n
+  #for n in range(d['shape'][0]):
+  #  if d['array'][n]=='': break
+  #d['array'][n]=' '.join(sysargvIn)
+  #t2.putcol('CLI_COMMAND',d)
+  d=tb.getcol('TIME')
+  mjd=time.time()/3600/24 +40588-0.5  # Convert 01/01/1970 to MJD
+  d[n]=mjd
+  tb.putcol('TIME',d)
+  d=tb.getcol('MESSAGE')
+  d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} to make COPY_ADIOS (and then COPY_DATA) from {DATACOL}'
+  tb.putcol('MESSAGE',d)
+  d=tb.getcol('ORIGIN')
+  d[n]=sys.argv[0]#+':'+k[-1]
+  tb.putcol('ORIGIN',d)
+  tb.close()
+  
 if __name__ == "__main__":  
   parser = argparse.ArgumentParser(description=
                                    'Test the column-wise compression using the Adios2StMan storage manager in casacore tables')

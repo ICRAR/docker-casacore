@@ -1,12 +1,7 @@
 import numpy as np
 import sys
-from casacore.tables import (
-    table
-    )
-from casacore.images import (
-    image
-    )
-
+from casacore.tables import ( table )
+from casacore.images import ( image )
 
 print('Opening Reference ',sys.argv[-2])
 im1=image(sys.argv[-2])
@@ -20,3 +15,5 @@ d_max=np.max(np.abs(d_ref-d_new))
 #im1.close()
 #im2.close()
 print('Errors ',d_rms,d_diff,d_max,d_diff/d_rms,d_max/d_rms)
+
+return(d_diff/d_rms) # return the fractional \Delta RMS over RMS 
