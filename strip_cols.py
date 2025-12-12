@@ -56,10 +56,11 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME)-> tuple:
    if 'COPY_DATA' in tb.colnames():
       print('Remove old standard COPY_DATA and the original data column: ',DATACOL)
       tb.removecols('COPY_DATA')
-      if DATACOL in tb.colnames():
-        tb.removecols(DATACOL)
-      else:
-        print(f'No {DATACOL} - not removing that')
+      for DC in DATACOL.split(','):
+          if DC in tb.colnames():
+              tb.removecols(DC)
+          else:
+              print(f'No {DC} - not removing that')
    else:
       print('No COPY_DATA - taking no action')
   else:
