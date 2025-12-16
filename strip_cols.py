@@ -1,22 +1,5 @@
 """
-This module provides a test script for evaluating the performance and accuracy of column-wise compression
-using the Adios2StMan storage manager in casacore tables. It generates synthetic complex data, writes it to
-a table with configurable compression settings for the real and imaginary parts, and measures the compression
-ratio and read/write times. The script also supports plotting the difference between original and compressed
-data for visual inspection.
-
-Key Features:
-- Configurable compressor and accuracy for each column via command-line arguments.
-- Synthetic data generation with user-defined shape.
-- Writes original, real, and imaginary parts to separate columns with optional compression.
-- Measures and prints compression ratios and timing statistics for write and read operations.
-- Optionally plots histograms of differences between original and compressed data.
-
-Dependencies:
-- casacore.tables
-- numpy
-- adios2 (with mgard, sz and zfp)
-- matplotlib
+This module provides a script removing extra columns after making an acceptable compression. COPY_DATA will be removed. DATACOL can be a list to be removed. COPY_ADIOS is then the reference.
 
 Usage:
   python strip_cols.py [--filename DIR] [--datacol=CORRECTED_DATA]
@@ -56,10 +39,11 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME)-> tuple:
    if 'COPY_DATA' in tb.colnames():
       print('Remove old standard COPY_DATA and the original data column: ',DATACOL)
       tb.removecols('COPY_DATA')
-      if DATACOL in tb.colnames():
-        tb.removecols(DATACOL)
-      else:
-        print(f'No {DATACOL} - not removing that')
+      for DC in DATACOL.split(','):
+        if DC in tb.colnames():
+          tb.removecols(DC)
+        else:
+          print(f'No {DC} - not removing that')
    else:
       print('No COPY_DATA - taking no action')
   else:
@@ -94,7 +78,7 @@ if HISTORY==True:
   
 if __name__ == "__main__":  
   parser = argparse.ArgumentParser(description=
-                                   'Test the column-wise compression using the Adios2StMan storage manager in casacore tables')
+                                   'Remove the extra columns after compression')
   parser.add_argument("--filename", type=str, default=FILENAME, help="MS filename")
   parser.add_argument("--datacol", type=str, default=DATACOL, help="Data Column")
 
