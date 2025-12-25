@@ -4,6 +4,7 @@ import matplotlib.pylab as pl
 from casacore.tables import ( table )
 from casacore.images import ( image )
 
+sys.argv.append('demo/Reduced_1197634368.ms')
 print('Opening MS ',sys.argv[-1])
 tb=table(sys.argv[-1]+'/ANTENNA')
 pos=tb.getcol('POSITION')
@@ -35,7 +36,7 @@ for t in np.unique(time):
             if np.sum(a1[I[m[0]]]==n2):
                 tmp_n2=-n1
                 tmp_n1=-n2
-            cls.append([I[m[0]],0,tmp_n1,tmp_n2])
+            cls.append([I[m[0]][0],0,tmp_n1,tmp_n2])
             m0=np.where((a1[I]==n0)&(a2[I]==n1))[0]
             m1=np.where((a1[I]==n0)&(a2[I]==n2))[0]
             tmp_n0=np.nanmean(d_old[I[m0]],axis=(0,1))
@@ -52,6 +53,9 @@ for t in np.unique(time):
         Ip.append(Ip[0])
         pl.plot(pos[Ip,0],pos[Ip,1],'k-')
 pl.savefig('tmp.png')
+vis_cls_val=np.array(vis_cls_val)
+data_cls_val=np.array(data_cls_val)
+cls=np.array(cls)
 
 d_rms=np.std(d_old)
 d_diff=np.std(d_ref-d_new)
@@ -62,17 +66,3 @@ print('Errors ',d_rms,d_diff,d_max,d_diff/d_rms,d_max/d_rms)
 
 return(d_diff/d_rms) # return the fractional \Delta RMS over RMS 
 
-
-
-In [62]: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...:    

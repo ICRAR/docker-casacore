@@ -80,6 +80,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
         DELETEOLD=DELETEOLD,PLOT=PLOT)-> tuple:
   """Write and read the table and create a copy of the DATA column from the DATA
   """
+  import time # why is this failing?
   tb=table(FILENAME,readonly=False)
   try:
       print(f'Opening data column {DATACOL}')
@@ -204,7 +205,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
         I=np.where(a1!=a2)[0]
         tic=np.nanstd(data[I])
         data-=vis
-        print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'Standard',tic)
+        print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic)
     tic = time.time()
     tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
@@ -222,7 +223,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
   #print(f'IMAG[{COMPRESSOR2}] compression and write time: {tcomp_imag:.3f}\n')
   #print('Total compression and write time: '
   #      f'{(tcomp_real+tcomp_imag):.3f} ({((tcomp_real+tcomp_imag)/tnocomp_complex):.1f}x)\n\n')
-
+  #
   #print(f'ORIG read time: {(tread_complex):.3f} s')
   #print(f'REAL[{COMPRESSOR1}] decompression and read time: {(tdecomp_real):.3f} s')
   #print(f'REAL compression ratio: {size / r_on_disk_size:.2f}')
@@ -232,30 +233,34 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
   #      f'{(tdecomp_real+tdecomp_imag):.3f} s ({((tdecomp_real+tdecomp_imag)/tread_complex):.1f}x)\n\n')
   #if PLOT:
   #  plot(vis, visr, visi, cvis)
-
-HISTORY=True
-if HISTORY==True:
-  import time
-  tb=tables.table(FILENAME+'/HISTORY',readonly=False)
-  n=tb.nrows() #n=-1 # Stick remarks at the end. Could loose important info ..
-  tb.addrows(nrows=1)
-  #d=t2.getcol('CLI_COMMAND')#,nrow=(t2.nrows()-1))
-  #n=d['shape'];n[0]+=1;d['shape']=n
-  #for n in range(d['shape'][0]):
-  #  if d['array'][n]=='': break
-  #d['array'][n]=' '.join(sysargvIn)
-  #t2.putcol('CLI_COMMAND',d)
-  d=tb.getcol('TIME')
-  mjd=time.time()/3600/24 +40588-0.5  # Convert 01/01/1970 to MJD
-  d[n]=mjd
-  tb.putcol('TIME',d)
-  d=tb.getcol('MESSAGE')
-  d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} to make COPY_ADIOS (and then COPY_DATA) from {DATACOL}'
-  tb.putcol('MESSAGE',d)
-  d=tb.getcol('ORIGIN')
-  d[n]=sys.argv[0]#+':'+k[-1]
-  tb.putcol('ORIGIN',d)
-  tb.close()
+  #
+  HISTORY=True
+  if HISTORY==True:
+    import time
+    tb=table(f"{FILENAME}/HISTORY",readonly=False)
+    n=tb.nrows() #n=-1 # Stick remarks at the end. Could loose important info ..
+    tb.addrows(nrows=1)
+    #d=t2.getcol('CLI_COMMAND')#,nrow=(t2.nrows()-1))
+    #n=d['shape'];n[0]+=1;d['shape']=n
+    #for n in range(d['shape'][0]):
+    #  if d['array'][n]=='': break
+    #d['array'][n]=' '.join(sysargvIn)
+    #t2.putcol('CLI_COMMAND',d)
+    d=tb.getcol('TIME')
+    mjd=time.time()/3600/24 +40588-0.5  # Convert 01/01/1970 to MJD
+    d[n]=mjd
+    tb.putcol('TIME',d)
+    d=tb.getcol('MESSAGE')
+    d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} to make COPY_ADIOS (and then COPY_DATA) from {DATACOL}'
+    print('Writing HISTORY: ',d[n])
+    tb.putcol('MESSAGE',d)
+    d=tb.getcol('ORIGIN')
+    d[n]=sys.argv[0]#+':'+k[-1]
+    tb.putcol('ORIGIN',d)
+    d=tb.getcol('ORIGIN')
+    d[n]=sys.argv[0]#+':'+k[-1]
+    tb.putcol('ORIGIN',d)
+    tb.close()
   
 if __name__ == "__main__":  
   parser = argparse.ArgumentParser(description=
