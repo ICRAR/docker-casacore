@@ -62,17 +62,3 @@ print('Errors ',d_rms,d_diff,d_max,d_diff/d_rms,d_max/d_rms)
 
 return(d_diff/d_rms) # return the fractional \Delta RMS over RMS 
 
-
-
-In [62]: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...: 
-    ...:    
