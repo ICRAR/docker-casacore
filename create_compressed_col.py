@@ -29,7 +29,7 @@ import sys
 import functools
 import operator
 import os, time, shutil
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as pl
 
 from casacore.tables import (
   makearrcoldesc,
@@ -71,7 +71,7 @@ MODE = 'ABS';
 ACCURACY = "0.1";
 FILENAME = "1197634368.ms";
 DATACOL = "CORRECTED_DATA";
-DELETEOLD = False
+DELETEOLD = True
 PLOT = False
 STEPS = 0
 
@@ -105,7 +105,17 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
             valuetype='complex', shape=cell_shape,
             datamanagergroup='group0', datamanagertype='Adios2StMan' ),
          ))
-  Adminfo = makedminfo(
+  if COMPRESSOR==None:
+    Adminfo = makedminfo(
+        Atabdesc,
+        {
+            'group0': {
+                'OPERATORPARAMS': {
+                    'COPY_ADIOS': {
+                        'lossless' : 'Huffman_Zstd'}
+               } } } )      
+  else:
+    Adminfo = makedminfo(
         Atabdesc,
         {
             'group0': {
@@ -169,9 +179,10 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     steps=1
     Nbase=SHAP[0]
     print(f'Using one step for writing and reading new columns.')
+  tot_tic = time.time()
   for n in range(steps):
     print('Write %d/%d\t'%(n,steps))
-    tic = time.time()
+    tic=time.time()
     vis=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
     print(f'Read {Nbase} compressed complex visibilities from {DATACOL} column in {tsteps:.3f}s')
@@ -186,8 +197,11 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     tsteps = time.time()-tic
     print(f'Wrote {Nbase} compressed complex visibilities to ADIOS column in {tsteps:.3f}s')
   tb.close()
+  tsteps = time.time()-tot_tic
+  if (steps>1): print(f'Total Read/Write compressed complex visibilities from {DATACOL}/COPY_ADIOS column in {tsteps:.3f}s')
 
   tb=table(FILENAME,readonly=False)
+  tot_tic = time.time()
   for n in range(steps):
     print('Read %d/%d\t'%(n,steps))
     #tic=time.time()
@@ -213,6 +227,8 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
   a_seq=tb.getdminfo("COPY_ADIOS")["SEQNR"]
   t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
   tb.close()
+  tsteps = time.time()-tot_tic
+  if (steps>1): print(f'Total Read/Write compressed complex visibilities from COPY_ADIOS/COPY_DATA column in {tsteps:.3f}s')
 
   t_on_disk_size = get_size(f'{FILENAME}/table.f{t_seq}_TSM1')
   a_on_disk_size = get_size(f'{FILENAME}/table.f{a_seq}.bp')

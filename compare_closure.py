@@ -4,14 +4,16 @@ import matplotlib.pylab as pl
 from casacore.tables import ( table )
 from casacore.images import ( image )
 
-sys.argv.append('demo/Reduced_1197634368.ms')
-print('Opening MS ',sys.argv[-1])
+DataCol=sys.argv[-2]
 tb=table(sys.argv[-1]+'/ANTENNA')
 pos=tb.getcol('POSITION')
 tb.close()
 
 tb=table(sys.argv[-1])
-d_old=tb.getcol('DATA')
+if DataCol not in tb.colnames():
+    DataCol='DATA'
+print('Opening MS %s on %s'%(sys.argv[-1],DataCol))
+d_old=tb.getcol(DataCol)
 d_new=tb.getcol('COPY_DATA')
 a1=tb.getcol('ANTENNA1')
 a2=tb.getcol('ANTENNA2')
@@ -57,12 +59,36 @@ vis_cls_val=np.array(vis_cls_val)
 data_cls_val=np.array(data_cls_val)
 cls=np.array(cls)
 
-d_rms=np.std(d_old)
-d_diff=np.std(d_ref-d_new)
-d_max=np.max(np.abs(d_ref-d_new))
-#im1.close()
-#im2.close()
-print('Errors ',d_rms,d_diff,d_max,d_diff/d_rms,d_max/d_rms)
+d_max=np.nanmax(data_cls_val-vis_cls_val)
+d_diff=np.nanstd(data_cls_val-vis_cls_val)
+c_max=np.nanmax(np.angle(np.exp(-1j*(np.angle(data_cls_val)-np.angle(vis_cls_val))))*57.3)
+c_diff=np.nanstd(np.angle(np.exp(-1j*(np.angle(data_cls_val)-np.angle(vis_cls_val))))*57.3)
+print('Closure Error (deg): ',d_diff,d_max,c_diff,c_max)
+#d_max=np.nanmax(data_cls_val-vis_cls_val,axis=0)
+#d_diff=np.nanstd(data_cls_val-vis_cls_val,axis=0)
+#c_max=np.nanmax(np.angle(np.exp(-1j*(np.angle(data_cls_val)-np.angle(vis_cls_val))))*57.3,axis=0)
+#c_diff=np.nanstd(np.angle(np.exp(-1j*(np.angle(data_cls_val)-np.angle(vis_cls_val))))*57.3,axis=0)
+#print('Closure Error (deg): ')
+#n0=d_max.shape
+#for n1 in range(n0[0]):
+#    #for n2 in range(n0[1]):
+#       print(d_diff[n1])
+#for n1 in range(n0[0]):
+#    #for n2 in range(n0[1]):
+#       print(d_max[n1])
+#for n1 in range(n0[0]):
+#    #for n2 in range(n0[1]):
+#       print(c_diff[n1])
+#for n1 in range(n0[0]):
+#    #for n2 in range(n0[1]):
+#       print(c_max[n1])
 
-return(d_diff/d_rms) # return the fractional \Delta RMS over RMS 
+#d_rms=np.std(d_old)
+#d_diff=np.std(d_old-d_new)
+#d_max=np.max(np.abs(d_old-d_new))
+##im1.close()
+##im2.close()
+#print('Errors ',d_rms,d_diff,d_max,d_diff/d_rms,d_max/d_rms)
+
+##return(d_diff/d_rms) # return the fractional \Delta RMS over RMS 
 
