@@ -161,14 +161,15 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
 
   outname=f'{FILENAME}.{COMPRESSOR}.{ACCURACY}.adios'
   outname=outname.replace('.ms/','').replace('.ms','')
-  shutil.rmtree(outname)
+  if (os.path.isdir(outname)==True): shutil.rmtree(outname)
   
   tb2=table(outname,Atabdesc,dminfo=Adminfo)
   tb2.addrows(SHAP[0])
       
   if SKIPDATA==False:
-      shutil.rmtree(outname.replace('adios','tab'))
-      tb3=table(outname.replace('adios','tab'),Ttabdesc,dminfo=Tdminfo)
+      outname2=outname.replace('adios','tab')
+      if (os.path.isdir(outname2)==True): shutil.rmtree(outname2)
+      tb3=table(outname2,Ttabdesc,dminfo=Tdminfo)
       tb3.addrows(SHAP[0])
 
   if STEPS: # not equal zero
@@ -210,7 +211,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
 
   if SKIPDATA==False:
       tb3.close()
-      t_on_disk_size = get_size(outname.replace('adios','tab'))
+      t_on_disk_size = get_size(outname2)
       a_on_disk_size = get_size(outname)
       rat_on_disk_size=100.*a_on_disk_size/t_on_disk_size
       print(f'Native size: {t_on_disk_size} Compressed size: {a_on_disk_size} or {rat_on_disk_size:.1f}%')

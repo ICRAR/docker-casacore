@@ -187,7 +187,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     tsteps = time.time()-tic
     print(f'Read {Nbase} compressed complex visibilities from {DATACOL} column in {tsteps:.3f}s')
     s=vis.shape
-    if (COMPRESSOR == "mgard_complex")|(COMPRESSOR == "mgard"):
+    if True: #(COMPRESSOR == "mgard_complex")|(COMPRESSOR == "mgard"):
         vis=vis.reshape(-1)
         Inan=np.where(np.isnan(vis)==True)[0]
         vis[Inan]=0
