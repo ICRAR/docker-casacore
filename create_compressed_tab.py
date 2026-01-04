@@ -161,16 +161,13 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
 
   outname=f'{FILENAME}.{COMPRESSOR}.{ACCURACY}.adios'
   outname=outname.replace('.ms/','').replace('.ms','')
-  if (os.path.isdir(outname)==True): shutil.rmtree(outname)
-  
   tb2=table(outname,Atabdesc,dminfo=Adminfo)
   tb2.addrows(SHAP[0])
       
-  if SKIPDATA==False:
-      outname2=outname.replace('adios','tab')
-      if (os.path.isdir(outname2)==True): shutil.rmtree(outname2)
-      tb3=table(outname2,Ttabdesc,dminfo=Tdminfo)
-      tb3.addrows(SHAP[0])
+  if SKIPDATA==False: 
+   outname2=outname.replace('adios','tab')
+   tb3=table(outname2,Ttabdesc,dminfo=Tdminfo)
+   tb3.addrows(SHAP[0])
 
   if STEPS: # not equal zero
     steps=STEPS
@@ -201,7 +198,6 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
         vis=vis.reshape(s)
     tic = time.time()
     tb2.putcol('COPY',vis,nrow=Nbase,startrow=n*Nbase)
-    if SKIPDATA==False: tb3.putcol('COPY',vis,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
     print(f'Wrote {Nbase} compressed {vtype} visibilities to ADIOS column in {tsteps:.3f}s')
   tsteps = time.time()-tot_tic
@@ -210,7 +206,11 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
   tb2.close()
 
   if SKIPDATA==False:
+      tb2=table(outname)
+      for n in range(steps):
+         tb3.putcol('COPY',tb2.getcol('COPY',nrow=Nbase,startrow=n*Nbase),nrow=Nbase,startrow=n*Nbase)
       tb3.close()
+      tb2.close()
       t_on_disk_size = get_size(outname2)
       a_on_disk_size = get_size(outname)
       rat_on_disk_size=100.*a_on_disk_size/t_on_disk_size
