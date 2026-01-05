@@ -202,13 +202,20 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     print(f'Wrote {Nbase} compressed {vtype} visibilities to ADIOS column in {tsteps:.3f}s')
   tsteps = time.time()-tot_tic
   if (steps>1): print(f'Total Read/Write compressed {vtype} visibilities from {DATACOL}/COPY_ADIOS column in {tsteps:.3f}s')
-  tb.close()
   tb2.close()
 
   if SKIPDATA==False:
       tb2=table(outname)
       for n in range(steps):
-         tb3.putcol('COPY',tb2.getcol('COPY',nrow=Nbase,startrow=n*Nbase),nrow=Nbase,startrow=n*Nbase)
+         vis=tb2.getcol('COPY',nrow=Nbase,startrow=n*Nbase)
+         tb3.putcol('COPY',vis,nrow=Nbase,startrow=n*Nbase)
+         if n==0:
+             data=vis-tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
+             a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
+             a2=tb.getcol('ANTENNA2',nrow=Nbase,startrow=n*Nbase)
+             I=np.where(a1!=a2)[0]
+             print('Data Differences: ',
+                   np.nanstd(vis[I]),np.nanmax(np.abs(data[I])),np.nanstd(data[I]))
       tb3.close()
       tb2.close()
       t_on_disk_size = get_size(outname2)
@@ -217,6 +224,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
       print(f'Native size: {t_on_disk_size} Compressed size: {a_on_disk_size} or {rat_on_disk_size:.1f}%')
   else:
       print('Skipping back-conversion to COPY_DATA')
+  tb.close()
   #print(f'ORIG write time: {tnocomp_complex:.3f}')
   #print(f'REAL[{COMPRESSOR1}] compression and write time: {tcomp_real:.3f}')
   #print(f'IMAG[{COMPRESSOR2}] compression and write time: {tcomp_imag:.3f}\n')
