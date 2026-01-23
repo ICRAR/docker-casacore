@@ -161,13 +161,16 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
 
   outname=f'{FILENAME}.{COMPRESSOR}.{ACCURACY}.adios'
   outname=outname.replace('.ms/','').replace('.ms','')
+  if (os.path.isdir(outname)==True): shutil.rmtree(outname)
+  
   tb2=table(outname,Atabdesc,dminfo=Adminfo)
   tb2.addrows(SHAP[0])
       
-  if SKIPDATA==False: 
-   outname2=outname.replace('adios','tab')
-   tb3=table(outname2,Ttabdesc,dminfo=Tdminfo)
-   tb3.addrows(SHAP[0])
+  if SKIPDATA==False:
+      outname2=outname.replace('adios','tab')
+      if (os.path.isdir(outname2)==True): shutil.rmtree(outname2)
+      tb3=table(outname2,Ttabdesc,dminfo=Tdminfo)
+      tb3.addrows(SHAP[0])
 
   if STEPS: # not equal zero
     steps=STEPS

@@ -25,6 +25,9 @@ import adios2
 from contextlib import contextmanager
 from math import sqrt
 
+DELETEOLD=True
+DATACOL='None'
+FILENAME='demo.ms'
 
 def run(DATACOL=DATACOL,FILENAME=FILENAME)-> tuple:
   """Write and read the table and create a copy of the DATA column from the DATA
@@ -52,29 +55,29 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME)-> tuple:
   tb.close()
 
 
-HISTORY=True
-if HISTORY==True:
-  import time
-  tb=tables.table(FILENAME+'/HISTORY',readonly=False)
-  n=tb.nrows() #n=-1 # Stick remarks at the end. Could loose important info ..
-  tb.addrows(nrows=1)
-  #d=t2.getcol('CLI_COMMAND')#,nrow=(t2.nrows()-1))
-  #n=d['shape'];n[0]+=1;d['shape']=n
-  #for n in range(d['shape'][0]):
-  #  if d['array'][n]=='': break
-  #d['array'][n]=' '.join(sysargvIn)
-  #t2.putcol('CLI_COMMAND',d)
-  d=tb.getcol('TIME')
-  mjd=time.time()/3600/24 +40588-0.5  # Convert 01/01/1970 to MJD
-  d[n]=mjd
-  tb.putcol('TIME',d)
-  d=tb.getcol('MESSAGE')
-  d[n]=f'Removed COPY_DATA and {DATACOL}'
-  tb.putcol('MESSAGE',d)
-  d=tb.getcol('ORIGIN')
-  d[n]=sys.argv[0]#+':'+k[-1]
-  tb.putcol('ORIGIN',d)
-  tb.close()
+  HISTORY=True
+  if HISTORY==True:
+    import time
+    tb=table(FILENAME+'/HISTORY',readonly=False)
+    n=tb.nrows() #n=-1 # Stick remarks at the end. Could loose important info ..
+    tb.addrows(nrows=1)
+    #d=t2.getcol('CLI_COMMAND')#,nrow=(t2.nrows()-1))
+    #n=d['shape'];n[0]+=1;d['shape']=n
+    #for n in range(d['shape'][0]):
+    #  if d['array'][n]=='': break
+    #d['array'][n]=' '.join(sysargvIn)
+    #t2.putcol('CLI_COMMAND',d)
+    d=tb.getcol('TIME')
+    mjd=time.time()/3600/24 +40588-0.5  # Convert 01/01/1970 to MJD
+    d[n]=mjd
+    tb.putcol('TIME',d)
+    d=tb.getcol('MESSAGE')
+    d[n]=f'Removed COPY_DATA and {DATACOL}'
+    tb.putcol('MESSAGE',d)
+    d=tb.getcol('ORIGIN')
+    d[n]=sys.argv[0]#+':'+k[-1]
+    tb.putcol('ORIGIN',d)
+    tb.close()
   
 if __name__ == "__main__":  
   parser = argparse.ArgumentParser(description=
@@ -83,12 +86,13 @@ if __name__ == "__main__":
   parser.add_argument("--datacol", type=str, default=DATACOL, help="Data Column")
 
   DELETEOLD=True
+  DATACOL='None'
   args = parser.parse_args()
   if args.filename != FILENAME: 
     FILENAME = args.filename
   if args.datacol != DATACOL: 
     DATACOL = args.datacol
 
-    run(DATACOL=DATACOL,FILENAME=FILENAME)
+  run(DATACOL=DATACOL,FILENAME=FILENAME)
   sys.exit()
   
