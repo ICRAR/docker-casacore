@@ -40,8 +40,8 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME)-> tuple:
 
   if 'COPY_ADIOS' in tb.colnames():
    if 'COPY_DATA' in tb.colnames():
-      print('Remove old standard COPY_DATA and the original data column: ',DATACOL)
-      tb.removecols('COPY_DATA')
+      print('Remove these data columns: ',DATACOL)
+      #tb.removecols('COPY_DATA')
       for DC in DATACOL.split(','):
           if DC in tb.colnames():
               tb.removecols(DC)
