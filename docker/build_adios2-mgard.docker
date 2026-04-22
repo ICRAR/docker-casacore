@@ -35,7 +35,7 @@ RUN mkdir /code && cd /code \
 # building MGARD all the time)
 #
 RUN cd /code \
-    && git clone https://github.com/ornladios/ADIOS2.git \
+    && git clone https://github.com/rtobar/ADIOS2.git -b mgard-lossless-type-parameter \
     && cd ADIOS2 \
     && cmake -B build . -G Ninja -DMGARD=ON \
 #

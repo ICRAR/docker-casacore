@@ -75,6 +75,12 @@ orphan containers, although this should not happen in normal circumstances.
 make stop
 ```
 
+To make the singularity from this
+```bash
+docker save wsclean_adios:latest > wsclean_adios.tar
+singularity build wsclean_adios.sif docker-archive://wsclean_adios.tar
+```
+
 There is also a test target, which produces two MeasurmentSets using the Adios2 storage manager from the casacore C++ level and reads the data back using python-casacore. This makes sure that most of the stack is working correctly.
 ```bash
 make test
