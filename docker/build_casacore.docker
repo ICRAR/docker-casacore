@@ -24,7 +24,7 @@ RUN mkdir -p /code \
     && cd /code \
     && python -m venv venv \
     && . venv/bin/activate \
-    && pip install numpy \
+    && pip install numpy scipy astropy \
     && rm -rf casacore \
     && git clone https://github.com/rtobar/casacore.git -b adios2stman-rows-readwrite
     # && git clone https://github.com/casacore/casacore.git
