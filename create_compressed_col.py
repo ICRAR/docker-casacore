@@ -67,6 +67,8 @@ def get_size(msdir):
 # various settings
 COMPRESSORS = ["mgard", "mgard_complex", "zfp", "sz", "dysco",  "None"];
 COMPRESSOR = "mgard";
+LOSS = ['huffman_zstd','huffman','test']# last is not a valid response
+LOSSLESS = 'huffman'
 MODE = 'ABS';
 ACCURACY = "0.1";
 FILENAME = "1197634368.ms";
@@ -175,7 +177,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
     tic=time.time()
     vis=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
-    print(f'Read {Nbase} compressed complex visibilities from {DATACOL} column in {tsteps:.3f}s')
+    print(f'Read {Nbase} complex visibilities from {DATACOL} column in {tsteps:.3f}s')
     s=vis.shape
     if True: #(COMPRESSOR == "mgard_complex")|(COMPRESSOR == "mgard"):
         vis=vis.reshape(-1)
@@ -197,7 +199,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
     #tic=time.time()
     #data=t.getcol('COPY_DATA',nrow=Nbase,startrow=n*Nbase)
     #tsteps = time.time()-tic
-    #print(f'Read {Nbase} compressed complex visibilities from COPY_DATA column in {tsteps:.3f}s')
+    #print(f'Read {Nbase} complex visibilities from COPY_DATA column in {tsteps:.3f}s')
     tic=time.time()
     vis=tb.getcol('COPY_DYSCO',nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
@@ -209,11 +211,14 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
         I=np.where(a1!=a2)[0]
         tic=np.nanstd(data[I])
         data-=vis
-        print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic)
+        try:
+            print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic)
+        except:
+            print('Data Difference - Failed')
     tic = time.time()
     tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
-    print(f'Wrote {Nbase} compressed complex visibilities to TILED column in {tsteps:.3f}s')
+    print(f'Wrote {Nbase} complex visibilities to TILED column in {tsteps:.3f}s')
   a_seq=tb.getdminfo("COPY_DYSCO")["SEQNR"]
   t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
   tb.close()
@@ -269,7 +274,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
     tb.close()
   
 def run(DATACOL=DATACOL,FILENAME=FILENAME,
-        STEPS=STEPS,ACCURACY=ACCURACY,COMPRESSOR=COMPRESSOR,
+        STEPS=STEPS,ACCURACY=ACCURACY,COMPRESSOR=COMPRESSOR,LOSSLESS=LOSSLESS,
         DELETEOLD=DELETEOLD,PLOT=PLOT)-> tuple:
   """Write and read the table and create a copy of the DATA column from the DATA
   """
@@ -289,7 +294,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
 
   print("Settings:")
   print(f"  Compressor for {DATACOL} column: {COMPRESSOR} (Accuracy: {ACCURACY})")
-  print(f"  Data shape: {SHAP}")
+  print(f"  Lossless: {LOSSLESS},  Data shape: {SHAP}")
   print(f"  MS File: {FILENAME}")
   print()
 
@@ -306,7 +311,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
             'group0': {
                 'OPERATORPARAMS': {
                     'COPY_ADIOS': {
-                        'lossless' : 'Huffman_Zstd'}
+                        'lossless_type' : LOSSLESS}
                } } } )      
   else:
     Adminfo = makedminfo(
@@ -318,7 +323,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
                         'Operator': COMPRESSOR,
                         'mode': MODE,
                         'Accuracy': str(ACCURACY),
-                       'lossless' : 'Huffman'
+                        'lossless_type' : LOSSLESS
                  }}}})
 
   Ttabdesc = maketabdesc(
@@ -380,7 +385,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     tic=time.time()
     vis=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
-    print(f'Read {Nbase} compressed complex visibilities from {DATACOL} column in {tsteps:.3f}s')
+    print(f'Read {Nbase} complex visibilities from {DATACOL} column in {tsteps:.3f}s')
     s=vis.shape
     if True: #(COMPRESSOR == "mgard_complex")|(COMPRESSOR == "mgard"):
         vis=vis.reshape(-1)
@@ -402,7 +407,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     #tic=time.time()
     #data=t.getcol('COPY_DATA',nrow=Nbase,startrow=n*Nbase)
     #tsteps = time.time()-tic
-    #print(f'Read {Nbase} compressed complex visibilities from COPY_DATA column in {tsteps:.3f}s')
+    #print(f'Read {Nbase} complex visibilities from COPY_DATA column in {tsteps:.3f}s')
     tic=time.time()
     vis=tb.getcol('COPY_ADIOS',nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
@@ -418,7 +423,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     tic = time.time()
     tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
-    print(f'Wrote {Nbase} compressed complex visibilities to TILED column in {tsteps:.3f}s')
+    print(f'Wrote {Nbase} complex visibilities to TILED column in {tsteps:.3f}s')
   a_seq=tb.getdminfo("COPY_ADIOS")["SEQNR"]
   t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
   tb.close()
@@ -478,6 +483,7 @@ if __name__ == "__main__":
                                    'Test the column-wise compression using the Adios2StMan storage manager in casacore tables')
   parser.add_argument("--compressor", type=str, default=COMPRESSOR, help="Global data compressor")
   parser.add_argument("--accuracy", type=str, default=ACCURACY, help="Global accuracy for data columns")
+  parser.add_argument("--lossless", type=str, default=LOSSLESS, help="Final lossless data compressor")
   parser.add_argument("--filename", type=str, default=FILENAME, help="MS filename")
   parser.add_argument("--datacol", type=str, default=DATACOL, help="Data Column")
   parser.add_argument("--steps", type=int, default=0, help="Write a STEPS column in this number of steps.")
@@ -504,6 +510,11 @@ if __name__ == "__main__":
       sys.exit()
   else:
       COMPRESSOR = args.compressor
+  if args.lossless not in LOSS:
+      print(f"lossless compressor argument needs to be one of {LOSS}")
+      sys.exit()
+  else:
+      LOSSLESS = args.lossless
   #print(FILENAME,DATACOL,DELETEOLD,COMPRESSOR,ACCURACY)    
 
   if COMPRESSOR == "dysco":
@@ -511,7 +522,7 @@ if __name__ == "__main__":
         STEPS=STEPS,bitcount=ACCURACY, DELETEOLD=DELETEOLD)
   else:
     run(DATACOL=DATACOL,FILENAME=FILENAME,
-      STEPS=STEPS,ACCURACY=ACCURACY,COMPRESSOR=COMPRESSOR,
+        STEPS=STEPS,ACCURACY=ACCURACY,COMPRESSOR=COMPRESSOR,LOSSLESS=LOSSLESS,
       DELETEOLD=DELETEOLD)
   sys.exit()
   
