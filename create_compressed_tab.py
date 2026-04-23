@@ -129,7 +129,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
             'group0': {
                 'OPERATORPARAMS': {
                     'COPY': {
-                        'lossless' : 'Huffman_Zstd'}
+                        'lossless_type' : 'huffman_zstd'}
                } } } )      
   else:
     Adminfo = makedminfo(
@@ -141,7 +141,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
                         'Operator': COMPRESSOR,
                         'mode': MODE,
                         'Accuracy': str(ACCURACY),
-                    #    'lossless' : 'Huffman_Zstd'
+                        #'lossless_type' : 'huffman_zstd'# default huffman_zstd
                     }
                } } } )
 

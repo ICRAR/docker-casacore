@@ -34,23 +34,20 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME)-> tuple:
   """
   tb=table(FILENAME,readonly=False)
 
-  print(f"  MS File: {FILENAME} if COPY_ADIOS is in place will remove COPY_DATA & {DATACOL} columns")
+  print(f"  MS File: {FILENAME} will remove requested {DATACOL} columns")
   print()
 
 
-  if 'COPY_ADIOS' in tb.colnames():
-   if 'COPY_DATA' in tb.colnames():
-      print('Remove these data columns: ',DATACOL)
-      #tb.removecols('COPY_DATA')
-      for DC in DATACOL.split(','):
+  print('Remove these data columns: ',DATACOL)
+  #tb.removecols('COPY_DATA')
+  for DC in DATACOL.split(','):
           if DC in tb.colnames():
+              a_seq=tb.getdminfo(DC)["SEQNR"]
               tb.removecols(DC)
+              # ADIOS does not remove old files after deletion
+              if path.os.isdir(f'{FILENAME}/table.f{a_seq}.bp'): shutil.rmtree(f'{FILENAME}/table.f{a_seq}.bp')
           else:
               print(f'No {DC} - not removing that')
-   else:
-      print('No COPY_DATA - taking no action')
-  else:
-      print('No COPY_ADIOS - taking no action')
       
   tb.close()
 
