@@ -26,8 +26,8 @@ RUN mkdir -p /code \
     && . venv/bin/activate \
     && pip install numpy \
     && rm -rf casacore \
-    && git clone https://github.com/rtobar/casacore.git -b adios2stman-rows-readwrite
-    # && git clone https://github.com/casacore/casacore.git
+    && git clone https://github.com/casacore/casacore.git
+    #&& git clone https://github.com/rtobar/casacore.git -b adios2stman-rows-readwrite
 # COPY /patch/tAdios2StMan.cc /code/casacore/tables/DataMan/test/
 RUN . /code/venv/bin/activate \
     && cd /code/casacore \
