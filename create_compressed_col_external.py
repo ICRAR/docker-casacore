@@ -63,7 +63,7 @@ def get_size(msdir):
 
 
 # various settings
-COMPRESSORS = ["mgard", "mgard_complex", "zfp", "sz", "None"];
+COMPRESSORS = ["mgard", "mgard_complex", "zfp", "sz", "None", "dysco"];
 COMPRESSOR = "sz";
 MODE = 'ABS';
 ACCURACY = "0.1";
@@ -112,6 +112,22 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
                     'COPY_ADIOS': {
                         'lossless' : 'Huffman_Zstd'}
                } } } )      
+  elif COMPRESSOR=="dysco":
+      Atabdesc = maketabdesc(
+          makearrcoldesc("COPY_DYSCO", np.complex64(0+0j), shape=SHAP[1:], options=1,
+                               datamanagertype='DyscoStMan'))
+      Atabdesc["COPY_DYSCO"]['valueType']='complex' # bug in Dysco???
+      Adminfo=makedminfo(
+              Atabdesc,
+              { "TYPE": "DyscoStMan", "NAME": "dysco", "SPEC": {
+                          'dataBitCount': int(ACCURACY),
+                          'weightBitCount': 12,
+                          'distribution': 'TruncatedGaussian',
+                          'normalization': 'AF',
+                          'studentTNu': 0.0,
+                          'distributionTruncation': 2.5
+                      }
+                  })
   else:
     Adminfo = makedminfo(
         Atabdesc,
@@ -129,7 +145,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
         (makearrcoldesc('COPY_DATA', '',
             valuetype='complex', shape=cell_shape,
             datamanagergroup='group1', datamanagertype='TiledShapeStMan' ),
-         ))
+        ))
   Tdminfo = makedminfo(
         Ttabdesc,
         {
@@ -140,12 +156,13 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
 
 
   outname=f'{FILENAME}.{COMPRESSOR}.{ACCURACY}.adios'
+  #if COMPRESSOR=="dysco": outname=f'{FILENAME}.{COMPRESSOR}.{ACCURACY}.dysco'
   outname=outname.replace('.ms/','').replace('.ms','')
   if (os.path.isdir(outname)==True): shutil.rmtree(outname)
   tb2=table(outname,Atabdesc,dminfo=Adminfo)
   tb2.addrows(SHAP[0])
       
-  if (SKIPDATA==True):
+  if (SKIPDATA==False):
    if ('COPY_DATA' in tb.colnames()):
     if DELETEOLD:
       print('Remove old standard COPY_DATA')
@@ -156,7 +173,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
       tb.addcols(Ttabdesc,dminfo=Tdminfo)
     else:
       print('Reusing old adios COPY')
-  else:
+   else:
       tb.addcols(Ttabdesc,dminfo=Tdminfo)
 
   if STEPS: # not equal zero
