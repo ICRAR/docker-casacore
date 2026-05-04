@@ -45,7 +45,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME)-> tuple:
               a_seq=tb.getdminfo(DC)["SEQNR"]
               tb.removecols(DC)
               # ADIOS does not remove old files after deletion
-              if path.os.isdir(f'{FILENAME}/table.f{a_seq}.bp'): shutil.rmtree(f'{FILENAME}/table.f{a_seq}.bp')
+              if os.path.isdir(f'{FILENAME}/table.f{a_seq}.bp'): shutil.rmtree(f'{FILENAME}/table.f{a_seq}.bp')
           else:
               print(f'No {DC} - not removing that')
       
