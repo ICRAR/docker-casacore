@@ -63,7 +63,7 @@ def get_size(msdir):
 
 
 # various settings
-COMPRESSORS = ["mgard", "mgard_complex", "zfp", "sz", "None", "dysco"];
+COMPRESSORS = ["mgard", "mgard_complex", "zfp", "sz", "None"]; #, "dysco"]; DYSCO can not be a standalone file column?
 COMPRESSOR = "sz";
 MODE = 'ABS';
 ACCURACY = "0.1";
@@ -113,10 +113,10 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
                         'lossless' : 'Huffman_Zstd'}
                } } } )      
   elif COMPRESSOR=="dysco":
-      Atabdesc = maketabdesc(
-          makearrcoldesc("COPY_DYSCO", np.complex64(0+0j), shape=SHAP[1:], options=1,
-                               datamanagertype='DyscoStMan'))
-      Atabdesc["COPY_DYSCO"]['valueType']='complex' # bug in Dysco???
+      Acoldesc=makearrcoldesc("COPY_DYSCO", np.complex64(0+0j), shape=SHAP[1:], options=1,
+                               datamanagertype='DyscoStMan')
+      Acoldesc['desc']['valueType']='complex' # bug in Dysco???
+      Atabdesc = maketabdesc(Acoldesc)
       Adminfo=makedminfo(
               Atabdesc,
               { "TYPE": "DyscoStMan", "NAME": "dysco", "SPEC": {

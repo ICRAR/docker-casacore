@@ -68,7 +68,7 @@ def get_size(msdir):
 COMPRESSORS = ["mgard", "mgard_complex", "zfp", "sz", "dysco",  "None"];
 COMPRESSOR = "mgard";
 LOSS = ['huffman_zstd','huffman','test']# last is not a valid response
-LOSSLESS = 'huffman'
+LOSSLESS = LOSS[0]
 MODE = 'ABS';
 ACCURACY = "0.1";
 FILENAME = "1197634368.ms";
@@ -110,7 +110,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
                                datamanagertype='DyscoStMan')
   Atabdesc['desc']['valueType']='complex' # bug in Dysco???
   Adminfo={ "TYPE": "DyscoStMan", "NAME": "dysco", "SPEC": {
-                          'dataBitCount': bitcount,
+                          'dataBitCount': int(bitcount),
                           'weightBitCount': 12,
                           'distribution': 'TruncatedGaussian',
                           'normalization': 'AF',
@@ -137,7 +137,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
       a_seq=tb.getdminfo("COPY_DYSCO")["SEQNR"]
       tb.removecols('COPY_DYSCO')
       print(f'Removing {FILENAME}/table.f{a_seq}')
-      shutil.rmtree(f'{FILENAME}/table.f{a_seq}')
+      if os.path.isfile(f'{FILENAME}/table.f{a_seq}'): shutil.rmtree(f'{FILENAME}/table.f{a_seq}')
       tb.addcols(Atabdesc,dminfo=Adminfo)
     else:
       print('Reusing old dysco COPY')
