@@ -118,15 +118,18 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
                           'distributionTruncation': 2.5
                       }
                   }
+  group1=int(np.random.random()*1e4)
+  group1=f'group{group1:%04d}'
+  print(f'Using {group1} for labels')
   Ttabdesc = maketabdesc(
         (makearrcoldesc('COPY_DATA', '',
             valuetype='complex', shape=cell_shape,
-            datamanagergroup='group1', datamanagertype='TiledShapeStMan' ),
+            datamanagergroup=group1, datamanagertype='TiledShapeStMan' ),
          ))
   Tdminfo = makedminfo(
         Ttabdesc,
         {
-            'group1': {
+            group1: {
                 'OPERATORPARAMS': {
                     'COPY_DATA': {}
                } } } )
@@ -326,15 +329,18 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
                         'lossless_type' : LOSSLESS
                  }}}})
 
+  group1=int(np.random.random()*1e4)
+  group1=f'group{group1:04d}'
+  print(f'Using {group1} for labels')
   Ttabdesc = maketabdesc(
         (makearrcoldesc('COPY_DATA', '',
             valuetype='complex', shape=cell_shape,
-            datamanagergroup='group1', datamanagertype='TiledShapeStMan' ),
+            datamanagergroup=group1, datamanagertype='TiledShapeStMan' ),
          ))
   Tdminfo = makedminfo(
         Ttabdesc,
         {
-            'group1': {
+            group1: {
                 'OPERATORPARAMS': {
                     'COPY_DATA': {}
                } } } )

@@ -13,7 +13,8 @@ def Compare(A,B):
     d_rms=np.std(d_ref)
     d_diff=np.std(d_ref-d_new)
     d_max=np.max(np.abs(d_ref-d_new))
-    print('Errors ',d_rms,d_diff,d_max,d_diff/d_rms,d_max/d_rms)
+    print('#ImageErrors: Image_RMS, Image_Max/Ref_Max, DeltaImage_RMS, DeltaImage_Max, dImRMS/RMS, dImMAX/RMS')
+    print('Image Errors ',d_rms,np.max(d_new)/np.max(d_ref),d_diff,d_max,d_diff/d_rms,d_max/d_rms)
     return(d_diff/d_rms) # return the fractional \Delta RMS over RMS
 
 

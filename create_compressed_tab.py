@@ -129,7 +129,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
             'group0': {
                 'OPERATORPARAMS': {
                     'COPY': {
-                        'lossless_type' : 'huffman_zstd'}
+                        'lossless' : 'Huffman_Zstd'}
                } } } )      
   else:
     Adminfo = makedminfo(
@@ -141,7 +141,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
                         'Operator': COMPRESSOR,
                         'mode': MODE,
                         'Accuracy': str(ACCURACY),
-                        #'lossless_type' : 'huffman_zstd'# default huffman_zstd
+                        'lossless' : 'Huffman'
                     }
                } } } )
 
@@ -178,6 +178,10 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     if steps<0:
         steps=len(np.unique(tb.getcol('TIME')))
         Nbase=int(SHAP[0]/steps)
+        for n in range(6,1,-1):
+            if int(steps/n)==steps/n:
+                Nbase *= n
+                steps=int(steps/n)       
         if (Nbase*steps!=SHAP[0]):
             steps = find_smallest_divisor(SHAP[0])    
             Nbase=SHAP[0]/steps
