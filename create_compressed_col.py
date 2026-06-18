@@ -207,7 +207,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
     vis=tb.getcol('COPY_DYSCO',nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
     print(f'Read {Nbase} compressed complex visibilities from COPY_DYSCO column in {tsteps:.3f}s')
-    if n==0:
+    if np.mod(n,10)==0: # every 10th now
         data=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
         a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
         a2=tb.getcol('ANTENNA2',nrow=Nbase,startrow=n*Nbase)
@@ -390,14 +390,21 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     print('Write %d/%d\t'%(n,steps))
     tic=time.time()
     vis=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
+    fg=tb.getcol('FLAG',nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
     print(f'Read {Nbase} complex visibilities from {DATACOL} column in {tsteps:.3f}s')
     s=vis.shape
-    if True: #(COMPRESSOR == "mgard_complex")|(COMPRESSOR == "mgard"):
+    if (COMPRESSOR == "mgard_complex")|(COMPRESSOR == "mgard"): # This perhaps should be true for all 
         vis=vis.reshape(-1)
-        Inan=np.where(np.isnan(vis)==True)[0]
-        vis[Inan]=0
+        fg=vis.reshape(-1)
+        Inan=np.where(np.isnan(vis)==True)[0] # Flag NaNs
+        fg[Inan]=True
+        Inan=np.where(fg==True)[0] 
+        vis[Inan]=0              # Set flagged data to be zero
         vis=vis.reshape(s)
+        fg=fg.reshape(s)
+        # This failed when I tried to write the FLAG back with MGARD. Not sure why
+        tb.putcol('FLAG',fg,nrow=Nbase,startrow=n*Nbase)
     tic = time.time()
     tb.putcol('COPY_ADIOS',vis,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
@@ -418,7 +425,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     vis=tb.getcol('COPY_ADIOS',nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
     print(f'Read {Nbase} compressed complex visibilities from COPY_ADIOS column in {tsteps:.3f}s')
-    if n==0:
+    if np.mod(n,10)==0: # every 10th now
         data=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
         a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
         a2=tb.getcol('ANTENNA2',nrow=Nbase,startrow=n*Nbase)
@@ -473,7 +480,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     d[n]=mjd
     tb.putcol('TIME',d)
     d=tb.getcol('MESSAGE')
-    d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} to make COPY_ADIOS (and then COPY_DATA) from {DATACOL}'
+    d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} to make COPY_ADIOS (and then COPY_DATA) from {DATACOL} with flagging'
     print('Writing HISTORY: ',d[n])
     tb.putcol('MESSAGE',d)
     d=tb.getcol('ORIGIN')
