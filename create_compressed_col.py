@@ -75,9 +75,10 @@ FILENAME = "1197634368.ms";
 DATACOL = "CORRECTED_DATA";
 DELETEOLD = True
 PLOT = False
+GEN_TSM = False
 STEPS = 0
 
-def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
+def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         STEPS=STEPS,bitcount=ACCURACY, DELETEOLD=DELETEOLD)-> tuple:
   """
   Just to keep the information how this would have to be done. DYSCO requires the table
@@ -228,7 +229,11 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
   tsteps = time.time()-tot_tic
   if (steps>1): print(f'Total Read/Write compressed complex visibilities from COPY_DYSCO/COPY_DATA column in {tsteps:.3f}s')
 
-  t_on_disk_size = get_size(f'{FILENAME}/table.f{t_seq}_TSM1')
+  try: # the ASKAP MS do not generate a separate table
+      t_on_disk_size = get_size(f'{FILENAME}/table.f{t_seq}_TSM1')
+  except:
+      print('Guessing default disk size for COPY_DATA as not separate directory')
+      t_on_disk_size = SHAP[0]*SHAP[1]*SHAP[2]*8
   a_on_disk_size = get_size(f'{FILENAME}/table.f{a_seq}')
   rat_on_disk_size=100.*a_on_disk_size/t_on_disk_size
   print(f'Native size: {t_on_disk_size} Compressed size: {a_on_disk_size} or {rat_on_disk_size:.1f}%')
@@ -276,7 +281,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
     tb.putcol('ORIGIN',d)
     tb.close()
   
-def run(DATACOL=DATACOL,FILENAME=FILENAME,
+def run(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         STEPS=STEPS,ACCURACY=ACCURACY,COMPRESSOR=COMPRESSOR,LOSSLESS=LOSSLESS,
         DELETEOLD=DELETEOLD,PLOT=PLOT)-> tuple:
   """Write and read the table and create a copy of the DATA column from the DATA
@@ -302,6 +307,8 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
   print()
 
   cell_shape=SHAP[1:]
+  group0=int(np.random.random()*1e4)
+  group0=f'group{group0:04d}'
   Atabdesc = maketabdesc(
         (makearrcoldesc('COPY_ADIOS', '',
             valuetype='complex', shape=cell_shape,
@@ -311,7 +318,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     Adminfo = makedminfo(
         Atabdesc,
         {
-            'group0': {
+            group0: {
                 'OPERATORPARAMS': {
                     'COPY_ADIOS': {
                         'lossless_type' : LOSSLESS}
@@ -320,7 +327,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     Adminfo = makedminfo(
         Atabdesc,
         {
-            'group0': {
+            group0: {
                 'OPERATORPARAMS': {
                     'COPY_ADIOS': {
                         'Operator': COMPRESSOR,
@@ -358,7 +365,8 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
   else:
       tb.addcols(Atabdesc,dminfo=Adminfo)
       
-  if 'COPY_DATA' in tb.colnames():
+  if GEN_TSM:
+   if 'COPY_DATA' in tb.colnames():
     if DELETEOLD:
       print('Remove old standard COPY_DATA')
       #t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
@@ -368,7 +376,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
       tb.addcols(Ttabdesc,dminfo=Tdminfo)
     else:
       print('Reusing old adios COPY')
-  else:
+   else:
       tb.addcols(Ttabdesc,dminfo=Tdminfo)
 
   if STEPS: # not equal zero
@@ -386,8 +394,11 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
     Nbase=SHAP[0]
     print(f'Using one step for writing and reading new columns.')
   tot_tic = time.time()
+  mem_budget=8*Nbase*SHAP[1]*SHAP[2]/1e9
+  mem_steps=0
+  print('Expected Memory footprint few* %.2fGB'%(mem_budget))
   for n in range(steps):
-    print('Write %d/%d\t'%(n,steps))
+    print('Step %d/%d\t'%(n,steps))
     tic=time.time()
     vis=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
     fg=tb.getcol('FLAG',nrow=Nbase,startrow=n*Nbase)
@@ -404,46 +415,65 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
         vis=vis.reshape(s)
         fg=fg.reshape(s)
         # This failed when I tried to write the FLAG back with MGARD. Not sure why
-        tb.putcol('FLAG',fg,nrow=Nbase,startrow=n*Nbase)
+        #tb.putcol('FLAG',fg,nrow=Nbase,startrow=n*Nbase)
     tic = time.time()
     tb.putcol('COPY_ADIOS',vis,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
     print(f'Wrote {Nbase} compressed complex visibilities to ADIOS column in {tsteps:.3f}s')
+    if ((args.memlim>0)&((n-mem_steps)*mem_budget>args.memlim)):
+            mem_steps=n
+            print(f'Flushing on step {n}',flush=True)
+            tb.flush()
   tb.close()
   tsteps = time.time()-tot_tic
   if (steps>1): print(f'Total Read/Write compressed complex visibilities from {DATACOL}/COPY_ADIOS column in {tsteps:.3f}s')
 
   tb=table(FILENAME,readonly=False)
   tot_tic = time.time()
-  for n in range(steps):
-    print('Read %d/%d\t'%(n,steps))
-    #tic=time.time()
-    #data=t.getcol('COPY_DATA',nrow=Nbase,startrow=n*Nbase)
-    #tsteps = time.time()-tic
-    #print(f'Read {Nbase} complex visibilities from COPY_DATA column in {tsteps:.3f}s')
-    tic=time.time()
-    vis=tb.getcol('COPY_ADIOS',nrow=Nbase,startrow=n*Nbase)
-    tsteps = time.time()-tic
-    print(f'Read {Nbase} compressed complex visibilities from COPY_ADIOS column in {tsteps:.3f}s')
-    if np.mod(n,10)==0: # every 10th now
-        data=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
-        a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
-        a2=tb.getcol('ANTENNA2',nrow=Nbase,startrow=n*Nbase)
-        I=np.where(a1!=a2)[0]
-        tic=np.nanstd(data[I])
-        data-=vis
-        print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic)
-    tic = time.time()
-    tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
-    tsteps = time.time()-tic
-    print(f'Wrote {Nbase} complex visibilities to TILED column in {tsteps:.3f}s')
+  if GEN_TSM:
+   mem_steps=0
+   for n in range(steps):
+        print('Read %d/%d\t'%(n,steps))
+        #tic=time.time()
+        #data=t.getcol('COPY_DATA',nrow=Nbase,startrow=n*Nbase)
+        #tsteps = time.time()-tic
+        #print(f'Read {Nbase} complex visibilities from COPY_DATA column in {tsteps:.3f}s')
+        tic=time.time()
+        vis=tb.getcol('COPY_ADIOS',nrow=Nbase,startrow=n*Nbase)
+        tsteps = time.time()-tic
+        print(f'Read {Nbase} compressed complex visibilities from COPY_ADIOS column in {tsteps:.3f}s')
+        if np.mod(n,10)==0: # every 10th now
+            data=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
+            a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
+            a2=tb.getcol('ANTENNA2',nrow=Nbase,startrow=n*Nbase)
+            I=np.where(a1!=a2)[0]
+            tic=np.nanstd(data[I])
+            readback=np.nanstd(vis[I])
+            data-=vis
+            print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic,readback)
+        tic = time.time()
+        tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
+        tsteps = time.time()-tic
+        print(f'Wrote {Nbase} complex visibilities to TILED column in {tsteps:.3f}s')
+        if ((args.memlim>0)&((n-mem_steps)*mem_budget>args.memlim)):
+            mem_steps=n
+            print(f'Flushing on step {n}',flush=True)
+            tb.flush()
+   t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
   a_seq=tb.getdminfo("COPY_ADIOS")["SEQNR"]
-  t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
   tb.close()
   tsteps = time.time()-tot_tic
   if (steps>1): print(f'Total Read/Write compressed complex visibilities from COPY_ADIOS/COPY_DATA column in {tsteps:.3f}s')
 
-  t_on_disk_size = get_size(f'{FILENAME}/table.f{t_seq}_TSM1')
+  if GEN_TSM:
+    try: # the ASKAP MS do not generate a separate table
+      t_on_disk_size = get_size(f'{FILENAME}/table.f{t_seq}_TSM1')
+    except:
+      print('Guessing default disk size for COPY_DATA as not separate directory')
+      t_on_disk_size = SHAP[0]*SHAP[1]*SHAP[2]*8
+  else:
+      print('Guessing default disk size for COPY_DATA as not generated')
+      t_on_disk_size = SHAP[0]*SHAP[1]*SHAP[2]*8
   a_on_disk_size = get_size(f'{FILENAME}/table.f{a_seq}.bp')
   rat_on_disk_size=100.*a_on_disk_size/t_on_disk_size
   print(f'Native size: {t_on_disk_size} Compressed size: {a_on_disk_size} or {rat_on_disk_size:.1f}%')
@@ -465,45 +495,50 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME,
   #
   HISTORY=True
   if HISTORY==True:
-    import time
-    tb=table(f"{FILENAME}/HISTORY",readonly=False)
-    n=tb.nrows() #n=-1 # Stick remarks at the end. Could loose important info ..
-    tb.addrows(nrows=1)
-    #d=t2.getcol('CLI_COMMAND')#,nrow=(t2.nrows()-1))
-    #n=d['shape'];n[0]+=1;d['shape']=n
-    #for n in range(d['shape'][0]):
-    #  if d['array'][n]=='': break
-    #d['array'][n]=' '.join(sysargvIn)
-    #t2.putcol('CLI_COMMAND',d)
-    d=tb.getcol('TIME')
-    mjd=time.time()/3600/24 +40588-0.5  # Convert 01/01/1970 to MJD
-    d[n]=mjd
-    tb.putcol('TIME',d)
-    d=tb.getcol('MESSAGE')
-    d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} to make COPY_ADIOS (and then COPY_DATA) from {DATACOL} with flagging'
-    print('Writing HISTORY: ',d[n])
-    tb.putcol('MESSAGE',d)
-    d=tb.getcol('ORIGIN')
-    d[n]=sys.argv[0]#+':'+k[-1]
-    tb.putcol('ORIGIN',d)
-    d=tb.getcol('ORIGIN')
-    d[n]=sys.argv[0]#+':'+k[-1]
-    tb.putcol('ORIGIN',d)
-    tb.close()
-  
+        import time
+        tb=table(f"{FILENAME}/HISTORY",readonly=False)
+        n=tb.nrows() #n=-1 # Stick remarks at the end. Could loose important info ..
+        tb.addrows(nrows=1)
+        #d=t2.getcol('CLI_COMMAND')#,nrow=(t2.nrows()-1))
+        #n=d['shape'];n[0]+=1;d['shape']=n
+        #for n in range(d['shape'][0]):
+        #  if d['array'][n]=='': break
+        #d['array'][n]=' '.join(sysargvIn)
+        #t2.putcol('CLI_COMMAND',d)
+        d=tb.getcol('TIME')
+        mjd=time.time()/3600/24 +40588-0.5  # Convert 01/01/1970 to MJD
+        d[n]=mjd
+        tb.putcol('TIME',d)
+        d=tb.getcol('MESSAGE')
+        if GEN_TSM:
+            d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} to make COPY_ADIOS (and then COPY_DATA) from {DATACOL} with flagging'
+        else:
+            d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} to make COPY_ADIOS from {DATACOL} with flagging'
+        print('Writing HISTORY: ',d[n])
+        tb.putcol('MESSAGE',d)
+        d=tb.getcol('ORIGIN')
+        d[n]=sys.argv[0]#+':'+k[-1]
+        tb.putcol('ORIGIN',d)
+        d=tb.getcol('ORIGIN')
+        d[n]=sys.argv[0]#+':'+k[-1]
+        tb.putcol('ORIGIN',d)
+        tb.close()
+     
 if __name__ == "__main__":  
-  parser = argparse.ArgumentParser(description=
-                                   'Test the column-wise compression using the Adios2StMan storage manager in casacore tables')
+  parser = argparse.ArgumentParser(description='Test the column-wise compression using the Adios2StMan storage manager in casacore tables')
   parser.add_argument("--compressor", type=str, default=COMPRESSOR, help="Global data compressor")
   parser.add_argument("--accuracy", type=str, default=ACCURACY, help="Global accuracy for data columns")
+  parser.add_argument("--memlim", type=int, default=0, help="An attempt to manage memory limits")
   parser.add_argument("--lossless", type=str, default=LOSSLESS, help="Final lossless data compressor")
   parser.add_argument("--filename", type=str, default=FILENAME, help="MS filename")
   parser.add_argument("--datacol", type=str, default=DATACOL, help="Data Column")
   parser.add_argument("--steps", type=int, default=0, help="Write a STEPS column in this number of steps.")
   parser.add_argument("--plot", action='store_true', help="(False) Plot comparison histograms.")
   parser.add_argument("--reuse", action='store_true', help="(False) delete and remake columns")
+  parser.add_argument("--gen_tsm_col", action='store_true', help="Make TSM copy of compressed Column")
 
   DELETEOLD=True
+  GEN_TSM=False
   args = parser.parse_args()
   if args.accuracy != ACCURACY:
       ACCURACY = args.accuracy
@@ -512,6 +547,9 @@ if __name__ == "__main__":
   if args.reuse:
     print('Swapping delete flag ',DELETEOLD)
     DELETEOLD = (args.reuse==False) # Swap the setting for delete
+  if args.gen_tsm_col:
+    print('Also generating an expanded TSM copy of the compressed data')
+    GEN_TSM = True
   if args.plot:
     PLOT = True
   if args.filename != FILENAME: 
@@ -531,10 +569,10 @@ if __name__ == "__main__":
   #print(FILENAME,DATACOL,DELETEOLD,COMPRESSOR,ACCURACY)    
 
   if COMPRESSOR == "dysco":
-    make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME,
+    make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         STEPS=STEPS,bitcount=ACCURACY, DELETEOLD=DELETEOLD)
   else:
-    run(DATACOL=DATACOL,FILENAME=FILENAME,
+    run(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         STEPS=STEPS,ACCURACY=ACCURACY,COMPRESSOR=COMPRESSOR,LOSSLESS=LOSSLESS,
       DELETEOLD=DELETEOLD)
   sys.exit()
