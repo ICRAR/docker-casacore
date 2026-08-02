@@ -77,6 +77,7 @@ DELETEOLD = True
 PLOT = False
 GEN_TSM = False
 STEPS = 0
+DEBUG=True
 
 def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         STEPS=STEPS,bitcount=ACCURACY, DELETEOLD=DELETEOLD)-> tuple:
@@ -312,7 +313,7 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
   Atabdesc = maketabdesc(
         (makearrcoldesc('COPY_ADIOS', '',
             valuetype='complex', shape=cell_shape,
-            datamanagergroup='group0', datamanagertype='Adios2StMan' ),
+            datamanagergroup=group0, datamanagertype='Adios2StMan' ),
          ))
   if COMPRESSOR=="None":
     Adminfo = makedminfo(
@@ -352,6 +353,7 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
                     'COPY_DATA': {}
                } } } )
 
+  #if DEBUG: print(Adminfo,Tdminfo)
   if 'COPY_ADIOS' in tb.colnames():
     if DELETEOLD:
       print('Remove old adios COPY')
@@ -385,10 +387,10 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
     if steps<0:
         steps=len(np.unique(tb.getcol('TIME')))
         Nbase=int(SHAP[0]/steps)
-        if (Nbase*steps!=SHAP[0]):
-            steps = find_smallest_divisor(SHAP[0])    
-            Nbase=SHAP[0]/steps
-    print(f'Using {steps} steps to write and read new columns in steps of {Nbase}.')
+    if (Nbase*steps!=SHAP[0]):
+        steps = find_smallest_divisor(SHAP[0])    
+        Nbase=SHAP[0]/steps
+    print(f'Using {steps} steps to write and read new columns in steps of {Nbase}. {SHAP[0]} should equal {Nbase*steps}')
   else:
     steps=1
     Nbase=SHAP[0]
@@ -439,27 +441,35 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         #tsteps = time.time()-tic
         #print(f'Read {Nbase} complex visibilities from COPY_DATA column in {tsteps:.3f}s')
         tic=time.time()
+        if DEBUG: print('About to read ADIOS col')
         vis=tb.getcol('COPY_ADIOS',nrow=Nbase,startrow=n*Nbase)
         tsteps = time.time()-tic
         print(f'Read {Nbase} compressed complex visibilities from COPY_ADIOS column in {tsteps:.3f}s')
         if np.mod(n,10)==0: # every 10th now
+            if DEBUG: print('About to read DATA col')
             data=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
             a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
             a2=tb.getcol('ANTENNA2',nrow=Nbase,startrow=n*Nbase)
             I=np.where(a1!=a2)[0]
+            if DEBUG: print('About to calc StdDev')
             tic=np.nanstd(data[I])
             readback=np.nanstd(vis[I])
             data-=vis
             print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic,readback)
         if GEN_TSM:
           tic = time.time()
+          if DEBUG: print('About to write COPY_DATA col')
           tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
           tsteps = time.time()-tic
           print(f'Wrote {Nbase} complex visibilities to TILED column in {tsteps:.3f}s')
         if ((args.memlim>0)&((n-mem_steps)*mem_budget>args.memlim)):
             mem_steps=n
             print(f'Flushing on step {n}',flush=True)
+            tic = time.time()
             tb.flush()
+            tsteps = time.time()-tic
+            print(f'Flushed in {tsteps:.3f}s')
+         # End step loop
   if GEN_TSM: t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
   a_seq=tb.getdminfo("COPY_ADIOS")["SEQNR"]
   tb.close()
@@ -582,10 +592,10 @@ if __name__ == "__main__":
       print('Making a copy of ',FILENAME)
       tb=table(FILENAME)
       FILENAME=FILENAME.replace('ms','compressed.ms')
-      #here select antenna1!=antenna2 & stokes=XX/YY
       if DROP_ACC==False:
           tb.copy(deep=True,valuecopy=True,newtablename=FILENAME)
       else:
+          #here select antenna1!=antenna2 & data[::3] (XX & YY)
           subt=tb.query('ANTENNA1!=ANTENNA2')
           subt.copy(deep=True,valuecopy=True,newtablename=FILENAME)
           subt.close()
