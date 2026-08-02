@@ -445,7 +445,7 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         vis=tb.getcol('COPY_ADIOS',nrow=Nbase,startrow=n*Nbase)
         tsteps = time.time()-tic
         print(f'Read {Nbase} compressed complex visibilities from COPY_ADIOS column in {tsteps:.3f}s')
-        if np.mod(n,10)==0: # every 10th now
+        if np.mod(n,args.report)==0: # every 10th now
             if DEBUG: print('About to read DATA col')
             data=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
             a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
@@ -544,6 +544,7 @@ if __name__ == "__main__":
   parser.add_argument("--filename", type=str, default=FILENAME, help="MS filename")
   parser.add_argument("--datacol", type=str, default=DATACOL, help="Data Column")
   parser.add_argument("--steps", type=int, default=0, help="Write a STEPS column in this number of steps.")
+  parser.add_argument("--report", type=int, default=10, help="Reporting interval")
   parser.add_argument("--plot", action='store_true', help="(False) Plot comparison histograms.")
   parser.add_argument("--reuse", action='store_true', help="(False) delete and remake columns")
   parser.add_argument("--gen_tsm_col", action='store_true', help="Make TSM copy of compressed Column")
