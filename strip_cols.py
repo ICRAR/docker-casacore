@@ -69,7 +69,7 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME)-> tuple:
     d[n]=mjd
     tb.putcol('TIME',d)
     d=tb.getcol('MESSAGE')
-    d[n]=f'Removed COPY_DATA and {DATACOL}'
+    d[n]=f'Removed column(s): {DATACOL}'
     tb.putcol('MESSAGE',d)
     d=tb.getcol('ORIGIN')
     d[n]=sys.argv[0]#+':'+k[-1]

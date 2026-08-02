@@ -281,7 +281,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
     tb.putcol('ORIGIN',d)
     tb.close()
   
-def run(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
+def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         STEPS=STEPS,ACCURACY=ACCURACY,COMPRESSOR=COMPRESSOR,LOSSLESS=LOSSLESS,
         DELETEOLD=DELETEOLD,PLOT=PLOT)-> tuple:
   """Write and read the table and create a copy of the DATA column from the DATA
@@ -407,15 +407,15 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
     s=vis.shape
     if (COMPRESSOR == "mgard_complex")|(COMPRESSOR == "mgard"): # This perhaps should be true for all 
         vis=vis.reshape(-1)
-        fg=vis.reshape(-1)
+        fg=fg.reshape(-1)
         Inan=np.where(np.isnan(vis)==True)[0] # Flag NaNs
         fg[Inan]=True
         Inan=np.where(fg==True)[0] 
         vis[Inan]=0              # Set flagged data to be zero
         vis=vis.reshape(s)
         fg=fg.reshape(s)
-        # This failed when I tried to write the FLAG back with MGARD. Not sure why
-        #tb.putcol('FLAG',fg,nrow=Nbase,startrow=n*Nbase)
+        # This failed before -- trying again
+        tb.putcol('FLAG',fg,nrow=Nbase,startrow=n*Nbase)
     tic = time.time()
     tb.putcol('COPY_ADIOS',vis,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
@@ -430,9 +430,9 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
 
   tb=table(FILENAME,readonly=False)
   tot_tic = time.time()
-  if GEN_TSM:
-   mem_steps=0
-   for n in range(steps):
+  #if GEN_TSM:
+  mem_steps=0
+  for n in range(steps):
         print('Read %d/%d\t'%(n,steps))
         #tic=time.time()
         #data=t.getcol('COPY_DATA',nrow=Nbase,startrow=n*Nbase)
@@ -451,15 +451,16 @@ def run(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
             readback=np.nanstd(vis[I])
             data-=vis
             print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic,readback)
-        tic = time.time()
-        tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
-        tsteps = time.time()-tic
-        print(f'Wrote {Nbase} complex visibilities to TILED column in {tsteps:.3f}s')
+        if GEN_TSM:
+          tic = time.time()
+          tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
+          tsteps = time.time()-tic
+          print(f'Wrote {Nbase} complex visibilities to TILED column in {tsteps:.3f}s')
         if ((args.memlim>0)&((n-mem_steps)*mem_budget>args.memlim)):
             mem_steps=n
             print(f'Flushing on step {n}',flush=True)
             tb.flush()
-   t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
+  if GEN_TSM: t_seq=tb.getdminfo("COPY_DATA")["SEQNR"]
   a_seq=tb.getdminfo("COPY_ADIOS")["SEQNR"]
   tb.close()
   tsteps = time.time()-tot_tic
@@ -536,9 +537,11 @@ if __name__ == "__main__":
   parser.add_argument("--plot", action='store_true', help="(False) Plot comparison histograms.")
   parser.add_argument("--reuse", action='store_true', help="(False) delete and remake columns")
   parser.add_argument("--gen_tsm_col", action='store_true', help="Make TSM copy of compressed Column")
+  parser.add_argument("--drop_acc", action='store_true', help="Drop AutoCorrelation in compressed data")
 
   DELETEOLD=True
   GEN_TSM=False
+  DROP_ACC=False
   args = parser.parse_args()
   if args.accuracy != ACCURACY:
       ACCURACY = args.accuracy
@@ -550,6 +553,9 @@ if __name__ == "__main__":
   if args.gen_tsm_col:
     print('Also generating an expanded TSM copy of the compressed data')
     GEN_TSM = True
+  if args.drop_acc:
+    print('Dropping autocorrelations')
+    DROP_ACC = True
   if args.plot:
     PLOT = True
   if args.filename != FILENAME: 
@@ -567,12 +573,23 @@ if __name__ == "__main__":
   else:
       LOSSLESS = args.lossless
   #print(FILENAME,DATACOL,DELETEOLD,COMPRESSOR,ACCURACY)    
+  print('Making a copy of ',FILENAME)
+  tb=table(FILENAME)
+  FILENAME=FILENAME.replace('ms','compressed.ms')
+  #here select antenna1!=antenna2 & stokes=XX/YY
+  if DROP_ACC==False:
+      tb.copy(deep=True,valuecopy=True,newtablename=FILENAME)
+  else:
+      subt=tb.query('ANTENNA1!=ANTENNA2')
+      subt.copy(deep=True,valuecopy=True,newtablename=FILENAME)
+      subt.close()
+  tb.close()
 
   if COMPRESSOR == "dysco":
     make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         STEPS=STEPS,bitcount=ACCURACY, DELETEOLD=DELETEOLD)
   else:
-    run(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
+    make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         STEPS=STEPS,ACCURACY=ACCURACY,COMPRESSOR=COMPRESSOR,LOSSLESS=LOSSLESS,
       DELETEOLD=DELETEOLD)
   sys.exit()
