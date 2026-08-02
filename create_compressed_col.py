@@ -538,10 +538,12 @@ if __name__ == "__main__":
   parser.add_argument("--reuse", action='store_true', help="(False) delete and remake columns")
   parser.add_argument("--gen_tsm_col", action='store_true', help="Make TSM copy of compressed Column")
   parser.add_argument("--drop_acc", action='store_true', help="Drop AutoCorrelation in compressed data")
+  parser.add_argument("--make_copy", action='store_true', help="make a copy for compressed data")
 
   DELETEOLD=True
   GEN_TSM=False
   DROP_ACC=False
+  MAKE_COPY=False
   args = parser.parse_args()
   if args.accuracy != ACCURACY:
       ACCURACY = args.accuracy
@@ -556,6 +558,9 @@ if __name__ == "__main__":
   if args.drop_acc:
     print('Dropping autocorrelations')
     DROP_ACC = True
+  if args.make_copy:
+    print('Copying MS file')
+    MAKE_COPY = True
   if args.plot:
     PLOT = True
   if args.filename != FILENAME: 
@@ -573,17 +578,18 @@ if __name__ == "__main__":
   else:
       LOSSLESS = args.lossless
   #print(FILENAME,DATACOL,DELETEOLD,COMPRESSOR,ACCURACY)    
-  print('Making a copy of ',FILENAME)
-  tb=table(FILENAME)
-  FILENAME=FILENAME.replace('ms','compressed.ms')
-  #here select antenna1!=antenna2 & stokes=XX/YY
-  if DROP_ACC==False:
-      tb.copy(deep=True,valuecopy=True,newtablename=FILENAME)
-  else:
-      subt=tb.query('ANTENNA1!=ANTENNA2')
-      subt.copy(deep=True,valuecopy=True,newtablename=FILENAME)
-      subt.close()
-  tb.close()
+  if MAKE_COPY:
+      print('Making a copy of ',FILENAME)
+      tb=table(FILENAME)
+      FILENAME=FILENAME.replace('ms','compressed.ms')
+      #here select antenna1!=antenna2 & stokes=XX/YY
+      if DROP_ACC==False:
+          tb.copy(deep=True,valuecopy=True,newtablename=FILENAME)
+      else:
+          subt=tb.query('ANTENNA1!=ANTENNA2')
+          subt.copy(deep=True,valuecopy=True,newtablename=FILENAME)
+          subt.close()
+      tb.close()
 
   if COMPRESSOR == "dysco":
     make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
