@@ -35,7 +35,7 @@ RUN . /code/venv/bin/activate \
 # WSClean
 RUN . /code/venv/bin/activate \
     && cd wsclean \
-    && cmake -B build -G Ninja \
+    && cmake -B build -G Ninja -DPORTABLE=True \
     && cmake --build build \
     && cmake --install build \
     && cd ../..

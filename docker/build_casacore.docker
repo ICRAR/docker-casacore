@@ -36,7 +36,7 @@ RUN . /code/venv/bin/activate \
     -DUSE_OPENMP=ON \
     -DUSE_HDF5=ON \
     -DUSE_ADIOS2=ON \
-    -DUSE_MPI=ON \
+    -DUSE_MPI=OFF \
     -DUSE_PCH=ON \
     -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} \
     -DDATA_DIR=/usr/local/share/casacore/data \
@@ -59,3 +59,6 @@ COPY ./demo ./demo
 WORKDIR /scratch
 COPY ./docker/entrypoint.sh /
 ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
+
+#Did not fix setonix pmi problem
+#RUN apt update && apt install -y libpmi0t64
