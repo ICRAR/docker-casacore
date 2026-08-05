@@ -22,9 +22,18 @@ def compress_image(fitsimage=None,imagename=None,ACC='0.0001',COMP='sz'):
       exit()
   tb2=table(imagename,readonly=False)
   map=tb2.getcol('map')
+  if len(map.shape)==5:
+    SHAP=[map.shape[1],map.shape[2],map.shape[3],map.shape[4]]
+  elif len(map.shape)==4:
+    SHAP=[map.shape[1],map.shape[2],map.shape[3]]
+  elif len(map.shape)==3:
+    SHAP=[map.shape[1],map.shape[2]]
+  else:
+    print('Dont understand the image shape',map.shape)
+    exit()
   Atabdesc = maketabdesc(
           (makearrcoldesc('map_adios', '',
-              valuetype='float', shape=[map.shape[1],map.shape[2],map.shape[3],map.shape[4]],
+              valuetype='float', shape=SHAP,
               datamanagergroup='group0', datamanagertype='Adios2StMan' ),
            ));
   Adminfo = makedminfo(Atabdesc,
