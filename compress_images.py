@@ -31,27 +31,29 @@ def compress_image(fitsimage=None,imagename=None,ACC='0.0001',COMP='sz'):
   else:
     print('Dont understand the image shape',map.shape)
     exit()
+  group0=int(np.random.random()*1e4)
+  group0=f'group{group0:04d}'
   Atabdesc = maketabdesc(
-          (makearrcoldesc('map_adios', '',
+          (makearrcoldesc(f'map_adios_{COMP}_{ACC}', '',
               valuetype='float', shape=SHAP,
-              datamanagergroup='group0', datamanagertype='Adios2StMan' ),
+              datamanagergroup=group0, datamanagertype='Adios2StMan' ),
            ));
   Adminfo = makedminfo(Atabdesc,
           {
-              'group0': {
+              group0: {
                   'OPERATORPARAMS': {
-                      'map_adios': {
+                      f'map_adios_{COMP}_{ACC}': {
                           'Operator': COMP,
                           'mode': 'ABS',
                           'Accuracy': ACC,
                           'lossless_type' : 'huffman_zstd'
                    }}}})
-  if 'map_adios' in tb2.colnames(): tb2.removecols('map_adios')
+  if f'map_adios_{COMP}_{ACC}' in tb2.colnames(): tb2.removecols(f'map_adios_{COMP}_{ACC}')
   tb2.addcols(Atabdesc,dminfo=Adminfo)
   tb2.getdminfo()
-  tb2.putcol('map_adios',map,nrow=1,startrow=0)
+  tb2.putcol(f'map_adios_{COMP}_{ACC}',map,nrow=1,startrow=0)
   tb2.close()
   tb2=table(imagename,readonly=True)
-  mapa=tb2.getcol('map_adios')
+  mapa=tb2.getcol(f'map_adios_{COMP}_{ACC}')
   print('Difference for ',COMP,ACC,np.max(np.abs(mapa-map)))
   tb2.close()
