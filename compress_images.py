@@ -1,8 +1,9 @@
-def compress_image(fitsimage=None,imagename=None,ACC='0.0001',COMP='sz'):
+def compress_image(fitsimage=None,imagename=None,ACC='0.0001',COMP='sz',LOSS='huffman_zstd'):
   """
   Given fitsimage and no imagename a CASA image will be made from the FITS image
-  The imagename can be derived FITS name
-  If a fitsimage name is given then a new CASA image is made from that
+  The imagename can be derived FITS name, if not given
+  If just an imagename is given the column is added to the exisiting casa image
+  One can provide a COMPressor at an ACCuracy and a LOSSless post-processor
 
   The function will generate a new map_adios column from the map column, with compression
   """
@@ -46,7 +47,7 @@ def compress_image(fitsimage=None,imagename=None,ACC='0.0001',COMP='sz'):
                           'Operator': COMP,
                           'mode': 'ABS',
                           'Accuracy': ACC,
-                          'lossless_type' : 'huffman_zstd'
+                          'lossless_type' : LOSS
                    }}}})
   if f'map_adios_{COMP}_{ACC}' in tb2.colnames(): tb2.removecols(f'map_adios_{COMP}_{ACC}')
   tb2.addcols(Atabdesc,dminfo=Adminfo)
