@@ -450,10 +450,12 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
             data=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
             a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
             a2=tb.getcol('ANTENNA2',nrow=Nbase,startrow=n*Nbase)
+            fg=tb.getcol('FLAG',nrow=Nbase,startrow=n*Nbase)
             I=np.where(a1!=a2)[0]
             if DEBUG: print('About to calc StdDev')
+            data*=(1-fg)
             tic=np.nanstd(data[I])
-            readback=np.nanstd(vis[I])
+            readback=np.nanstd(vis[I]*(1-fg[I]))
             data-=vis
             print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic,readback)
         if GEN_TSM:
