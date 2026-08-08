@@ -117,9 +117,12 @@ def compare_ADIOS_column(DATA1=DATA1,DATA2=DATA2,FILENAME=FILENAME,STEPS=STEPS)-
         tsteps = time.time()-tic
         print(f'Read {Nbase} from other column in {tsteps:.3f}s')
         #I=np.where(flag==False)
-        vis *=(1-fg) # zero flagged data
-        data*=(1-fg)
-        I=np.where((a1!=a2))[0]
+        if args.skip_flag:
+          I=np.arange(len(a1))
+        else:
+          vis *=(1-fg) # zero flagged data
+          data*=(1-fg)
+          I=np.where((a1!=a2))[0]
         if DEBUG: print('About to calc StdDev')
         readback_orig=np.nanstd(data[I])
         readback=np.nanstd(vis[I])
@@ -149,6 +152,7 @@ if __name__ == "__main__":
   parser.add_argument("--data2", type=str, default=DATA2, help="Data Column 2")
   parser.add_argument("--steps", type=int, default=0, help="Write a STEPS column in this number of steps.")
   parser.add_argument("--report", type=int, default=10, help="Reporting interval")
+  parser.add_argument("--skip_flag", action='store_true', help="Drop flag filter")
 
   args = parser.parse_args()
   if args.steps:
