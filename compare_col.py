@@ -126,8 +126,8 @@ def compare_ADIOS_column(DATA1=DATA1,DATA2=DATA2,FILENAME=FILENAME,STEPS=STEPS)-
         data-=vis
         print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',readback_orig,readback)
         # End step loop
-  t_seq=tb.getdminfo(DATA2)["SEQNR"]
-  a_seq=tb.getdminfo(DATA1)["SEQNR"]
+  t_seq=tb.getdminfo(DATA1)["SEQNR"]
+  a_seq=tb.getdminfo(DATA2)["SEQNR"]
   tb.close()
   tsteps = time.time()-tot_tic
   if (steps>1): print(f'Total Read/Write compressed complex visibilities from COPY_ADIOS/COPY_DATA column in {tsteps:.3f}s')
