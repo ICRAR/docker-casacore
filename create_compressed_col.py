@@ -36,6 +36,7 @@ from casacore.tables import (
   makearrcoldesc,
   makescacoldesc,
   table,
+  tabledefinehypercolumn,
   maketabdesc,
   makedminfo)
 import numpy as np
@@ -121,7 +122,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
                       }
                   }
   group1=int(np.random.random()*1e4)
-  group1=f'group{group1:%04d}'
+  group1=f'group{group1:04d}'
   print(f'Using {group1} for labels')
   Ttabdesc = maketabdesc(
         (makearrcoldesc('COPY_DATA', '',
