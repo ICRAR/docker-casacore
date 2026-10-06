@@ -1,4 +1,4 @@
-def compress_image(fitsimage=None,imagename=None,ACC='0.0001',COMP='sz',LOSS='huffman_zstd'):
+def compress_image(fitsimage=None,imagename=None,ACC='0.0001',COMP='mgard',LOSS='huffman_zstd'):
   """
   Given fitsimage and no imagename a CASA image will be made from the FITS image
   The imagename can be derived FITS name, if not given

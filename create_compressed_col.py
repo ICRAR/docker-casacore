@@ -67,7 +67,7 @@ def get_size(msdir):
 # various settings
 COMPRESSORS = ["mgard", "mgard_complex", "zfp", "sz", "dysco",  "None"];
 COMPRESSOR = "mgard";
-LOSS = ['huffman_zstd','huffman','test']# last is not a valid response
+LOSS = ['huffman_zstd','huffman','none']# last is not a valid response
 LOSSLESS = LOSS[0]
 MODE = 'ABS';
 ACCURACY = "0.1";
