@@ -89,6 +89,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
   """
 
   import time
+
   # if FILENAME = string (else assume it is an open tab)
   tb=table(FILENAME,readonly=False)
   try:
@@ -293,6 +294,11 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
   """
   
   import time
+  #DEBUG=True
+  if DEBUG:
+      import psutil
+      memory = psutil.virtual_memory()
+  
   tb=table(FILENAME,readonly=False)
   try:
       print(f'Opening data column {DATACOL}')
@@ -426,6 +432,18 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
     tb.putcol('COPY_ADIOS',vis,nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
     print(f'Wrote {Nbase} compressed complex visibilities to ADIOS column in {tsteps:.3f}s')
+    if DEBUG:
+        # --- CPU USAGE ---
+        # Total CPU usage percentage over a 1-second interval
+        print(f"CPU Usage: {psutil.cpu_percent(interval=1)}%") 
+        # CPU usage per logical core
+        print(f"CPU Usage per Core: {psutil.cpu_percent(interval=1, percpu=True)}") 
+        # Number of logical CPUs
+        print(f"Logical CPU Count: {psutil.cpu_count()}") 
+        # --- RAM / MEMORY ---
+        print(f"Total RAM: {memory.total / (1024**3):.2f} GB")
+        print(f"Available RAM: {memory.available / (1024**3):.2f} GB")
+        print(f"RAM Usage: {memory.percent}%")
     if ((args.memlim>0)&((n-mem_steps)*mem_budget>args.memlim)):
             mem_steps=n
             print(f'Flushing on step {n}',flush=True)
@@ -469,6 +487,18 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
           tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
           tsteps = time.time()-tic
           print(f'Wrote {Nbase} complex visibilities to TILED column in {tsteps:.3f}s')
+        if DEBUG:
+            # --- CPU USAGE ---
+            # Total CPU usage percentage over a 1-second interval
+            print(f"CPU Usage: {psutil.cpu_percent(interval=1)}%") 
+            # CPU usage per logical core
+            print(f"CPU Usage per Core: {psutil.cpu_percent(interval=1, percpu=True)}") 
+            # Number of logical CPUs
+            print(f"Logical CPU Count: {psutil.cpu_count()}") 
+            # --- RAM / MEMORY ---
+            print(f"Total RAM: {memory.total / (1024**3):.2f} GB")
+            print(f"Available RAM: {memory.available / (1024**3):.2f} GB")
+            print(f"RAM Usage: {memory.percent}%")
         if ((args.memlim>0)&((n-mem_steps)*mem_budget>args.memlim)):
             mem_steps=n
             print(f'Flushing on step {n}',flush=True)

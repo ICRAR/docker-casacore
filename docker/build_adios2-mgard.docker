@@ -35,10 +35,12 @@ RUN mkdir /code && cd /code \
 # building MGARD all the time)
 #
 RUN cd /code \
-    && git clone https://github.com/adios/ADIOS2.git \
+    && git clone https://github.com/ornladios/ADIOS2.git \
     && cd ADIOS2 \
     && cmake -B build . -G Ninja -DMGARD=ON \
-#
+#    && -DMGARD_ENABLE_LEGACY_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES="80-virtual" \
+#    && export AMDGPU_TARGETS="gfx906;gfx90a;gfx1100" \
+#    && -DMGARD_ENABLE_HIP=ON \
 # install ADIOS2
 #
     && export OMPI_CXX=/usr/bin/clang++ \
