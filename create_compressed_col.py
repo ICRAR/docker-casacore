@@ -36,6 +36,7 @@ from casacore.tables import (
   makearrcoldesc,
   makescacoldesc,
   table,
+  tabledefinehypercolumn,
   maketabdesc,
   makedminfo)
 import numpy as np
@@ -121,7 +122,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
                       }
                   }
   group1=int(np.random.random()*1e4)
-  group1=f'group{group1:%04d}'
+  group1=f'group{group1:04d}'
   print(f'Using {group1} for labels')
   Ttabdesc = maketabdesc(
         (makearrcoldesc('COPY_DATA', '',
@@ -191,6 +192,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         vis=vis.reshape(s)
     tic = time.time()
     tb.putcol('COPY_DYSCO',vis,nrow=Nbase,startrow=n*Nbase)
+    del vis
     tsteps = time.time()-tic
     print(f'Wrote {Nbase} compressed complex visibilities to DYSCO column in {tsteps:.3f}s')
   tb.close()
@@ -209,7 +211,7 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
     vis=tb.getcol('COPY_DYSCO',nrow=Nbase,startrow=n*Nbase)
     tsteps = time.time()-tic
     print(f'Read {Nbase} compressed complex visibilities from COPY_DYSCO column in {tsteps:.3f}s')
-    if np.mod(n,10)==0: # every 10th now
+    if np.mod(n,args.report)==0: # every 10th now
         data=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
         a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
         a2=tb.getcol('ANTENNA2',nrow=Nbase,startrow=n*Nbase)
@@ -220,8 +222,10 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
             print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic)
         except:
             print('Data Difference - Failed')
+        del data
     tic = time.time()
     tb.putcol('COPY_DATA',vis,nrow=Nbase,startrow=n*Nbase)
+    del vis
     tsteps = time.time()-tic
     print(f'Wrote {Nbase} complex visibilities to TILED column in {tsteps:.3f}s')
   a_seq=tb.getdminfo("COPY_DYSCO")["SEQNR"]
@@ -450,8 +454,11 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
             data=tb.getcol(DATACOL,nrow=Nbase,startrow=n*Nbase)
             a1=tb.getcol('ANTENNA1',nrow=Nbase,startrow=n*Nbase)
             a2=tb.getcol('ANTENNA2',nrow=Nbase,startrow=n*Nbase)
+            fg=tb.getcol('FLAG',nrow=Nbase,startrow=n*Nbase)
             I=np.where(a1!=a2)[0]
             if DEBUG: print('About to calc StdDev')
+            data*=(1-fg)
+            vis *=(1-fg)
             tic=np.nanstd(data[I])
             readback=np.nanstd(vis[I])
             data-=vis

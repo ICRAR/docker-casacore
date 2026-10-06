@@ -10,6 +10,8 @@ See also
 - [ADIOS2](https://github.com/ornladios/ADIOS2) The ADIOS2 advanced I/O system.
 - [MGARD](https://github.com/CODARcode/MGARD) The MGARD compression suite.
 
+- [Teal-Implementation] (https://github.com/uksrc-developers/adios-container) The singularity version from SKA-RC-Teal
+
 ## Usage
 The package comes with a Makefile allowing an easy and straight forward way to build and run
 the image.
