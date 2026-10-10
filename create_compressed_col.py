@@ -282,9 +282,9 @@ def make_DYSCO_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
     d=tb.getcol('ORIGIN')
     d[n]=sys.argv[0]#+':'+k[-1]
     tb.putcol('ORIGIN',d)
-    d=tb.getcol('ORIGIN')
-    d[n]=sys.argv[0]#+':'+k[-1]
-    tb.putcol('ORIGIN',d)
+    #d=tb.getcol('ORIGIN') # Did I intend to put something else here?
+    #d[n]=sys.argv[0]#+':'+k[-1]
+    #tb.putcol('ORIGIN',d)
     tb.close()
   
 def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
@@ -294,11 +294,12 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
   """
   
   import time
-  #DEBUG=True
+  DEBUG=False
   if DEBUG:
       import psutil
       memory = psutil.virtual_memory()
   
+  print('opening ',FILENAME)
   tb=table(FILENAME,readonly=False)
   try:
       print(f'Opening data column {DATACOL}')
@@ -480,7 +481,10 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
             tic=np.nanstd(data[I])
             readback=np.nanstd(vis[I])
             data-=vis
-            print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic,readback)
+            try:
+                print('Data Difference:',np.nanmax(np.abs(data[I])),np.nanstd(data[I]),'StdDev',tic,readback)
+            except:
+                print('Data Difference - Failed')
         if GEN_TSM:
           tic = time.time()
           if DEBUG: print('About to write COPY_DATA col')
@@ -559,17 +563,17 @@ def make_ADIOS_column(DATACOL=DATACOL,FILENAME=FILENAME, GEN_TSM=GEN_TSM,
         tb.putcol('TIME',d)
         d=tb.getcol('MESSAGE')
         if GEN_TSM:
-            d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} to make COPY_ADIOS (and then COPY_DATA) from {DATACOL} with flagging'
+            d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} and step {steps}, to make COPY_ADIOS (and then COPY_DATA) from {DATACOL} with flagging'
         else:
-            d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} to make COPY_ADIOS from {DATACOL} with flagging'
+            d[n]=f'Applied compressor {COMPRESSOR} with accuracy {ACCURACY} and step {steps}, to make COPY_ADIOS from {DATACOL} with flagging'
         print('Writing HISTORY: ',d[n])
         tb.putcol('MESSAGE',d)
         d=tb.getcol('ORIGIN')
         d[n]=sys.argv[0]#+':'+k[-1]
         tb.putcol('ORIGIN',d)
-        d=tb.getcol('ORIGIN')
-        d[n]=sys.argv[0]#+':'+k[-1]
-        tb.putcol('ORIGIN',d)
+        #d=tb.getcol('ORIGIN')  # Did I intend to put some other comment here?
+        #d[n]=sys.argv[0]#+':'+k[-1]
+        #tb.putcol('ORIGIN',d)
         tb.close()
      
 if __name__ == "__main__":  
